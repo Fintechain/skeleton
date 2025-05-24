@@ -1,0 +1,7 @@
+{
+  "serviceId": "integration-test-service",
+  "storage": {
+    "rootPath": "./test-data",
+    "defaultEngine": "memory"
+  }
+} 
