@@ -2,7 +2,7 @@
 package memory
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/domain/storage"
 )
 
 // Transaction implements storage.Transaction for in-memory storage.

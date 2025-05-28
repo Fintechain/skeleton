@@ -3,10 +3,10 @@ package system
 import (
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/infrastructure/system"
-	"github.com/ebanfa/skeleton/internal/infrastructure/system/mocks"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/infrastructure/system"
+	"github.com/fintechain/skeleton/internal/infrastructure/system/mocks"
 )
 
 func TestWithConfig(t *testing.T) {

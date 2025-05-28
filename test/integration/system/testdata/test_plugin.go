@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
 )
 
 // TestPlugin is a test plugin implementation for integration testing

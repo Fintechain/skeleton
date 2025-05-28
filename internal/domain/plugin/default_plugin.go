@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // DefaultPlugin provides a standard implementation of the Plugin interface.

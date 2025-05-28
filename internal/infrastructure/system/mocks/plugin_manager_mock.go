@@ -1,8 +1,8 @@
 package mocks
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
 )
 
 // MockPluginManager is a mock implementation of plugin.PluginManager for testing

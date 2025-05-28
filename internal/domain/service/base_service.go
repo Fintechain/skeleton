@@ -3,7 +3,7 @@ package service
 import (
 	"sync"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // BaseService provides a basic implementation of the Service interface.

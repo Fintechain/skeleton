@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/domain/storage"
 )
 
 // MockMultiStore is a mock implementation of storage.MultiStore for testing

@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // MockRegistry implements the component.Registry interface for testing

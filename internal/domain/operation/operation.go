@@ -2,7 +2,7 @@
 package operation
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // Input represents the input for an operation.

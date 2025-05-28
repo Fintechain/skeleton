@@ -7,16 +7,16 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/domain/system"
-	"github.com/ebanfa/skeleton/internal/infrastructure/config"
-	infraContext "github.com/ebanfa/skeleton/internal/infrastructure/context"
-	"github.com/ebanfa/skeleton/internal/infrastructure/event"
-	infraEvent "github.com/ebanfa/skeleton/internal/infrastructure/event"
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
-	infraStorage "github.com/ebanfa/skeleton/internal/infrastructure/storage"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/domain/system"
+	"github.com/fintechain/skeleton/internal/infrastructure/config"
+	infraContext "github.com/fintechain/skeleton/internal/infrastructure/context"
+	"github.com/fintechain/skeleton/internal/infrastructure/event"
+	infraEvent "github.com/fintechain/skeleton/internal/infrastructure/event"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
+	infraStorage "github.com/fintechain/skeleton/internal/infrastructure/storage"
 )
 
 // SystemConfig holds all the configuration for the system

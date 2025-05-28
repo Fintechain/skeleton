@@ -285,8 +285,8 @@ func StartWithFxAndContext(ctx context.Context, config *SystemConfig) (system.Sy
 ```go
 // Using the component-testkit module
 import (
-    "github.com/ebanfa/component-testkit/container"
-    "github.com/ebanfa/component-testkit/patterns"
+    "github.com/fintechain/component-testkit/container"
+    "github.com/fintechain/component-testkit/patterns"
 )
 
 func createSkeletonContainer(ctx context.Context) (*container.AppContainer, error) {

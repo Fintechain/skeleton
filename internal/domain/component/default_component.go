@@ -1,7 +1,7 @@
 package component
 
 import (
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
 )
 
 // DefaultComponent is a concrete implementation of the Component interface

@@ -1,11 +1,11 @@
 package system
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/infrastructure/event"
-	"github.com/ebanfa/skeleton/internal/infrastructure/system"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/infrastructure/event"
+	"github.com/fintechain/skeleton/internal/infrastructure/system"
 )
 
 // StartSystem starts the system with the given options
@@ -21,7 +21,7 @@ func StartSystem(options ...Option) error {
 type Option func(*system.SystemConfig)
 
 // WithConfig sets the system configuration
-func WithConfig(config *system.Config) Option {
+func WithConfig(config *InternalConfig) Option {
 	return func(sc *system.SystemConfig) {
 		sc.Config = config
 	}

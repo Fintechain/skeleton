@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // testOperation is a simple operation implementation for testing pipelines

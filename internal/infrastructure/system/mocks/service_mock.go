@@ -1,8 +1,8 @@
 package mocks
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/service"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/service"
 )
 
 // MockService is a mock implementation of the Service interface

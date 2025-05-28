@@ -1,8 +1,8 @@
 package mocks
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/operation"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/operation"
 )
 
 // MockOperation is a mock implementation of the Operation interface

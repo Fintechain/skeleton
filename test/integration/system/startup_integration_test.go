@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
-	"github.com/ebanfa/skeleton/internal/infrastructure/event"
-	"github.com/ebanfa/skeleton/internal/infrastructure/system"
-	pkgSystem "github.com/ebanfa/skeleton/pkg/system"
-	"github.com/ebanfa/skeleton/test/integration/system/testdata"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/infrastructure/event"
+	"github.com/fintechain/skeleton/internal/infrastructure/system"
+	pkgSystem "github.com/fintechain/skeleton/pkg/system"
+	"github.com/fintechain/skeleton/test/integration/system/testdata"
 )
 
 func TestSystemStartup_AllDefaults(t *testing.T) {

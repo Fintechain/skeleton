@@ -3,8 +3,8 @@ package system
 import (
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/system"
-	"github.com/ebanfa/skeleton/internal/infrastructure/system/mocks"
+	"github.com/fintechain/skeleton/internal/domain/system"
+	"github.com/fintechain/skeleton/internal/infrastructure/system/mocks"
 )
 
 func TestNewFactory(t *testing.T) {

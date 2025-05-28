@@ -3,7 +3,7 @@ package mocks
 import (
 	"fmt"
 
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
 )
 
 // MockLogger implements logging.Logger interface for testing

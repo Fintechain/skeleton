@@ -1,4 +1,4 @@
-module github.com/ebanfa/skeleton
+module github.com/fintechain/skeleton
 
 go 1.24.2
 

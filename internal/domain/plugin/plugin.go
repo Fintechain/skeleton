@@ -2,7 +2,7 @@
 package plugin
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // PluginInfo provides metadata about a plugin.

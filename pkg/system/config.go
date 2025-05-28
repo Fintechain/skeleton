@@ -1,7 +1,7 @@
 package system
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/domain/storage"
 )
 
 // DefaultConfig creates a default system configuration

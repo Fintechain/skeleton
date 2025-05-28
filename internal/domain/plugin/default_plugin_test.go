@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin/mocks"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin/mocks"
 )
 
 func TestNewDefaultPlugin(t *testing.T) {

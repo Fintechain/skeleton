@@ -2,13 +2,13 @@
 package system
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/domain/system"
-	"github.com/ebanfa/skeleton/internal/infrastructure/config"
-	"github.com/ebanfa/skeleton/internal/infrastructure/event"
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/domain/system"
+	"github.com/fintechain/skeleton/internal/infrastructure/config"
+	"github.com/fintechain/skeleton/internal/infrastructure/event"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
 )
 
 // SystemServiceConfig extends the domain config with infrastructure dependencies

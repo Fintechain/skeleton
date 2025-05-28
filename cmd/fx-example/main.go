@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/infrastructure/system"
-	pkgSystem "github.com/ebanfa/skeleton/pkg/system"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/infrastructure/system"
+	pkgSystem "github.com/fintechain/skeleton/pkg/system"
 )
 
 // ExamplePlugin demonstrates a simple plugin implementation

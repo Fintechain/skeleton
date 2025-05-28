@@ -5,8 +5,8 @@ import (
 	"crypto/sha256"
 	"sync"
 
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
 )
 
 // Store implements storage.Store for in-memory storage.

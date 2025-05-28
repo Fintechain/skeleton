@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/infrastructure/event"
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
-	"github.com/ebanfa/skeleton/internal/infrastructure/storage/memory"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/infrastructure/event"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/infrastructure/storage/memory"
 )
 
 // DefaultMultiStore implements the domain MultiStore interface.

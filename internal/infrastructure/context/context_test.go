@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 func TestNewContext(t *testing.T) {

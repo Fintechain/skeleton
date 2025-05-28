@@ -4,7 +4,7 @@ package testing
 import (
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/domain/storage"
 	"github.com/stretchr/testify/require"
 )
 

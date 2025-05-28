@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/service/mocks"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/service/mocks"
 )
 
 // Create a simple implementation of Service with health check

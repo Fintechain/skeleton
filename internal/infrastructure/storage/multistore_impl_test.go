@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/component/mocks"
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/domain/component/mocks"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
 )
 
 func TestNewMultiStore(t *testing.T) {

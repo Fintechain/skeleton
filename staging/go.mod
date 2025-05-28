@@ -1,4 +1,4 @@
-module github.com/ebanfa/skeleton-staging
+module github.com/fintechain/skeleton-staging
 
 go 1.24.2
 

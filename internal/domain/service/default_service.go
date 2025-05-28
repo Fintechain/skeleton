@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/infrastructure/context"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/infrastructure/context"
 )
 
 // DefaultService provides a standard implementation of the Service interface.

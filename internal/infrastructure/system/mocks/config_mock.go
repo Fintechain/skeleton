@@ -3,7 +3,7 @@ package mocks
 import (
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/infrastructure/config"
+	"github.com/fintechain/skeleton/internal/infrastructure/config"
 )
 
 // MockConfiguration is a mock implementation of config.Configuration for testing

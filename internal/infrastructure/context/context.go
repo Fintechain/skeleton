@@ -5,7 +5,7 @@ import (
 	stdctx "context"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // StdContext adapts Go's standard context to our component.Context interface.

@@ -3,7 +3,7 @@ package system
 import (
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/infrastructure/system/mocks"
+	"github.com/fintechain/skeleton/internal/infrastructure/system/mocks"
 )
 
 func TestNewConfigLoader(t *testing.T) {

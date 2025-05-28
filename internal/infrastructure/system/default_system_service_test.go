@@ -5,11 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/operation"
-	domainsystem "github.com/ebanfa/skeleton/internal/domain/system"
-	"github.com/ebanfa/skeleton/internal/infrastructure/context"
-	"github.com/ebanfa/skeleton/internal/infrastructure/system/mocks"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/operation"
+	domainsystem "github.com/fintechain/skeleton/internal/domain/system"
+	"github.com/fintechain/skeleton/internal/infrastructure/context"
+	"github.com/fintechain/skeleton/internal/infrastructure/system/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

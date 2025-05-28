@@ -3,7 +3,7 @@ package mocks
 import (
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // MockContext implements the component.Context interface for testing

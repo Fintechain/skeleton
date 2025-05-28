@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
 )
 
 // MockLogger is a mock implementation of logging.Logger for testing

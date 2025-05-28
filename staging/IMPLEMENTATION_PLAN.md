@@ -24,7 +24,7 @@ Currently working on:
 1. **Fix Package Organization**
    - We've reorganized packages to follow the existing pattern: `internal/domain/component`, etc.
    - All import paths need to be updated to use relative imports instead of absolute paths
-   - Example: `import "github.com/ebanfa/skeleton/skeleton/staging/internal/domain/component"` 
+   - Example: `import "github.com/fintechain/skeleton/skeleton/staging/internal/domain/component"` 
      should be `import "../component"` or similar during development
 
 2. **Context Implementation**

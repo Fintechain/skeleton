@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/ebanfa/skeleton/internal/infrastructure/event"
+	"github.com/fintechain/skeleton/internal/infrastructure/event"
 )
 
 // MockEventBus is a mock implementation of event.EventBus for testing

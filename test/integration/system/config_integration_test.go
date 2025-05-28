@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/infrastructure/system"
-	pkgSystem "github.com/ebanfa/skeleton/pkg/system"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/infrastructure/system"
+	pkgSystem "github.com/fintechain/skeleton/pkg/system"
 )
 
 func TestConfigurationIntegration_DefaultBehavior(t *testing.T) {

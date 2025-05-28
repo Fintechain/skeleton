@@ -3,7 +3,7 @@ package component
 import (
 	"sync"
 
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
 )
 
 // BaseComponent provides a basic implementation of the Component interface.

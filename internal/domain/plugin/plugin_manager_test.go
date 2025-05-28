@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin/mocks"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin/mocks"
 )
 
 func TestNewPluginManager(t *testing.T) {

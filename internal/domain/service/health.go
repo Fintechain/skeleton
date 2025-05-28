@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/infrastructure/context"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/infrastructure/context"
 )
 
 // HealthStatus represents the health status of a service.

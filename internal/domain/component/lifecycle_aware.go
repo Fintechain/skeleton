@@ -1,7 +1,7 @@
 package component
 
 import (
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
 )
 
 // LifecycleState represents the state of a component in its lifecycle.

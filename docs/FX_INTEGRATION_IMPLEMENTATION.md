@@ -540,8 +540,8 @@ Expected output:
 [Fx] SUPPLY     *event.DefaultEventBus
 [Fx] SUPPLY     *system.mockMultiStore
 [Fx] SUPPLY     []plugin.Plugin
-[Fx] PROVIDE    *system.DefaultSystemService <= github.com/ebanfa/skeleton/internal/infrastructure/system.provideSystemService()
-[Fx] INVOKE     github.com/ebanfa/skeleton/internal/infrastructure/system.initializeAndStart()
+[Fx] PROVIDE    *system.DefaultSystemService <= github.com/fintechain/skeleton/internal/infrastructure/system.provideSystemService()
+[Fx] INVOKE     github.com/fintechain/skeleton/internal/infrastructure/system.initializeAndStart()
 2025/05/23 19:01:37 [INFO] Created system service with ID: fx-example
 2025/05/23 19:01:37 Loading plugin: example-plugin v1.0.0
 [Fx] RUNNING

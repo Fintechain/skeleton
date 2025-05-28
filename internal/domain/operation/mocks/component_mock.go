@@ -2,7 +2,7 @@
 package mocks
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // MockExternalComponent is a mock implementation of component.Component for testing

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/component/mocks"
+	"github.com/fintechain/skeleton/internal/domain/component/mocks"
 )
 
 func TestDefaultComponentInitialize(t *testing.T) {

@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // MockPlugin implements the plugin.Plugin interface for testing

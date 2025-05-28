@@ -308,7 +308,7 @@ func IsStoreNotFound(err error) bool {
 package memory
 
 import (
-    "github.com/ebanfa/skeleton/internal/domain/storage"
+    "github.com/fintechain/skeleton/internal/domain/storage"
 )
 
 // Engine implements storage.Engine for in-memory storage
@@ -349,7 +349,7 @@ func (e *Engine) Open(name, path string) (storage.Store, error) {
 package file
 
 import (
-    "github.com/ebanfa/skeleton/internal/domain/storage"
+    "github.com/fintechain/skeleton/internal/domain/storage"
 )
 
 // Engine implements storage.Engine for file-based storage
@@ -392,7 +392,7 @@ package memory
 
 import (
     "sync"
-    "github.com/ebanfa/skeleton/internal/domain/storage"
+    "github.com/fintechain/skeleton/internal/domain/storage"
 )
 
 // Store implements storage.Store for in-memory storage
@@ -470,7 +470,7 @@ func (s *Store) Path() string {
 package memory
 
 import (
-    "github.com/ebanfa/skeleton/internal/domain/storage"
+    "github.com/fintechain/skeleton/internal/domain/storage"
 )
 
 type Transaction struct {
@@ -783,8 +783,8 @@ examples/storage/
 
 ```go
 import (
-    "github.com/ebanfa/skeleton/internal/domain/storage"
-    multistore "github.com/ebanfa/skeleton/internal/infrastructure/storage"
+    "github.com/fintechain/skeleton/internal/domain/storage"
+    multistore "github.com/fintechain/skeleton/internal/infrastructure/storage"
 )
 
 // Create MultiStore

@@ -5,7 +5,7 @@
 We're facing import path issues in our staging area implementation. The packages can't be imported using the absolute paths like:
 
 ```go
-import "github.com/ebanfa/skeleton/skeleton/staging/internal/domain/component"
+import "github.com/fintechain/skeleton/skeleton/staging/internal/domain/component"
 ```
 
 ## Option 1: Use Relative Imports During Development
@@ -35,12 +35,12 @@ We can create a temporary Go module in the staging directory to make the imports
 1. Create a go.mod file in the staging directory:
 ```
 cd skeleton/staging
-go mod init github.com/ebanfa/skeleton-staging
+go mod init github.com/fintechain/skeleton-staging
 ```
 
 2. Update imports to use this module:
 ```go
-import "github.com/ebanfa/skeleton-staging/internal/domain/component"
+import "github.com/fintechain/skeleton-staging/internal/domain/component"
 ```
 
 ### Pros

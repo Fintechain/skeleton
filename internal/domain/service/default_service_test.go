@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/service/mocks"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/service/mocks"
 )
 
 func TestDefaultService_CreateDefaultService(t *testing.T) {

@@ -4,12 +4,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
-	"github.com/ebanfa/skeleton/internal/domain/storage"
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
-	"github.com/ebanfa/skeleton/internal/infrastructure/storage/memory"
-	"github.com/ebanfa/skeleton/internal/infrastructure/system/mocks"
+	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/domain/storage"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/infrastructure/storage/memory"
+	"github.com/fintechain/skeleton/internal/infrastructure/system/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

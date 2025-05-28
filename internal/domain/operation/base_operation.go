@@ -1,7 +1,7 @@
 package operation
 
 import (
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // BaseOperationOptions contains options for creating a BaseOperation.

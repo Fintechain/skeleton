@@ -1,7 +1,7 @@
 package component
 
 import (
-	"github.com/ebanfa/skeleton/internal/infrastructure/logging"
+	"github.com/fintechain/skeleton/internal/infrastructure/logging"
 )
 
 // DependencyAware is an interface for components that have dependencies on other components.

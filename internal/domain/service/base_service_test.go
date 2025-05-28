@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/service/mocks"
+	"github.com/fintechain/skeleton/internal/domain/service/mocks"
 )
 
 func TestBaseService_CreateBaseService(t *testing.T) {

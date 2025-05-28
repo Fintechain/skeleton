@@ -3,7 +3,7 @@ package component
 import (
 	"testing"
 
-	"github.com/ebanfa/skeleton/internal/domain/component/mocks"
+	"github.com/fintechain/skeleton/internal/domain/component/mocks"
 )
 
 func TestDependencyAwareComponentBasics(t *testing.T) {

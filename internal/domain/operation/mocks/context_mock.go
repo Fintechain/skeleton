@@ -3,7 +3,7 @@ package mocks
 import (
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/component"
 )
 
 // MockExternalContext is a mock implementation of component.Context for testing

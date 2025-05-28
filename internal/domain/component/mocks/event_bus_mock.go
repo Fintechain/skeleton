@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/infrastructure/event"
+	"github.com/fintechain/skeleton/internal/infrastructure/event"
 )
 
 // MockEventBus implements the event.EventBus interface for testing

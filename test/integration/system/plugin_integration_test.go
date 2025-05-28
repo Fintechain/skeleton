@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ebanfa/skeleton/internal/domain/plugin"
-	pkgSystem "github.com/ebanfa/skeleton/pkg/system"
-	"github.com/ebanfa/skeleton/test/integration/system/testdata"
+	"github.com/fintechain/skeleton/internal/domain/plugin"
+	pkgSystem "github.com/fintechain/skeleton/pkg/system"
+	"github.com/fintechain/skeleton/test/integration/system/testdata"
 )
 
 func TestPluginIntegration_Registration(t *testing.T) {
