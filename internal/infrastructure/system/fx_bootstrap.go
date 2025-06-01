@@ -7,26 +7,35 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 
-	"github.com/fintechain/skeleton/internal/domain/component"
+	// Current Skeleton Framework internal APIs
+
+	"github.com/fintechain/skeleton/internal/domain/config"
+	"github.com/fintechain/skeleton/internal/domain/event"
+	"github.com/fintechain/skeleton/internal/domain/logging"
 	"github.com/fintechain/skeleton/internal/domain/plugin"
+	"github.com/fintechain/skeleton/internal/domain/registry"
 	"github.com/fintechain/skeleton/internal/domain/storage"
 	"github.com/fintechain/skeleton/internal/domain/system"
-	"github.com/fintechain/skeleton/internal/infrastructure/config"
-	infraContext "github.com/fintechain/skeleton/internal/infrastructure/context"
-	"github.com/fintechain/skeleton/internal/infrastructure/event"
-	infraEvent "github.com/fintechain/skeleton/internal/infrastructure/event"
-	"github.com/fintechain/skeleton/internal/infrastructure/logging"
-	infraStorage "github.com/fintechain/skeleton/internal/infrastructure/storage"
+
+	// Infrastructure implementations
+	configImpl "github.com/fintechain/skeleton/internal/infrastructure/config"
+	contextImpl "github.com/fintechain/skeleton/internal/infrastructure/context"
+	eventImpl "github.com/fintechain/skeleton/internal/infrastructure/event"
+	loggingImpl "github.com/fintechain/skeleton/internal/infrastructure/logging"
+	pluginImpl "github.com/fintechain/skeleton/internal/infrastructure/plugin"
+	registryImpl "github.com/fintechain/skeleton/internal/infrastructure/registry"
+	storageImpl "github.com/fintechain/skeleton/internal/infrastructure/storage"
 )
 
 // SystemConfig holds all the configuration for the system
 type SystemConfig struct {
 	Config     *Config
 	Plugins    []plugin.Plugin
-	Registry   component.Registry
+	Registry   registry.Registry
 	PluginMgr  plugin.PluginManager
 	EventBus   event.EventBus
 	MultiStore storage.MultiStore
+	Logger     logging.Logger
 }
 
 // Config holds the basic system configuration
@@ -47,106 +56,82 @@ func applyDefaults(config *SystemConfig) *SystemConfig {
 			StorageConfig: storage.MultiStoreConfig{
 				RootPath:      "./data",
 				DefaultEngine: "memory",
+				EngineConfigs: make(map[string]storage.Config),
 			},
 		}
 	}
 
 	if config.Registry == nil {
-		config.Registry = component.CreateRegistry()
+		config.Registry = registryImpl.NewRegistry()
 	}
 
 	if config.PluginMgr == nil {
-		config.PluginMgr = plugin.CreatePluginManager()
+		// Create plugin manager with standard filesystem
+		filesystem := plugin.NewStandardFileSystem()
+		config.PluginMgr = pluginImpl.NewPluginManager(filesystem)
 	}
 
 	if config.EventBus == nil {
-		config.EventBus = event.CreateEventBus()
+		config.EventBus = eventImpl.NewEventBus()
 	}
 
 	if config.MultiStore == nil {
-		// Create a simple memory-based multistore
-		config.MultiStore = createDefaultMultiStore(config.Config.StorageConfig)
+		config.MultiStore = storageImpl.NewMultiStore()
+	}
+
+	if config.Logger == nil {
+		config.Logger = loggingImpl.NewLogger()
 	}
 
 	return config
 }
 
-// createDefaultMultiStore creates a proper multistore implementation
-func createDefaultMultiStore(config storage.MultiStoreConfig) storage.MultiStore {
-	logger := logging.CreateStandardLogger(logging.Info)
-	eventBus := infraEvent.NewEventBus()
-	return infraStorage.NewMultiStore(&config, logger, eventBus)
-}
-
-// provideSystemService creates the system service with all dependencies
-func provideSystemService(
-	config *Config,
-	registry component.Registry,
-	pluginMgr plugin.PluginManager,
-	eventBus event.EventBus,
-	multiStore storage.MultiStore,
-	plugins []plugin.Plugin,
-) (*DefaultSystemService, error) {
-	// Convert to domain config
-	domainConfig := &system.SystemServiceConfig{
-		ServiceID:        config.ServiceID,
-		EnableOperations: true,
-		EnableServices:   true,
-		EnablePlugins:    true,
-		EnableEventLog:   true,
-		StorageConfig:    config.StorageConfig,
+// provideConfiguration creates a configuration from the Config
+func provideConfiguration(cfg *Config) config.Configuration {
+	// Create memory configuration source with the config values
+	values := map[string]interface{}{
+		"system.serviceId":             cfg.ServiceID,
+		"system.storage.rootPath":      cfg.StorageConfig.RootPath,
+		"system.storage.defaultEngine": cfg.StorageConfig.DefaultEngine,
 	}
 
-	// Create factory
-	logger := logging.CreateStandardLogger(logging.Info)
-	factory := NewFactory(
+	memorySource := configImpl.NewMemoryConfigurationSource(values)
+	return configImpl.NewConfiguration(memorySource)
+}
+
+// provideSystem creates the system with all dependencies
+func provideSystem(
+	registry registry.Registry,
+	pluginMgr plugin.PluginManager,
+	eventBus event.EventBus,
+	configuration config.Configuration,
+	multiStore storage.MultiStore,
+) system.System {
+	return NewSystem(
 		registry,
 		pluginMgr,
 		eventBus,
-		config.CreateConfiguration(),
+		configuration,
 		multiStore,
-		logger,
 	)
-
-	// Create system service
-	svc, err := factory.CreateSystemService(domainConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	// Cast to concrete type for fx
-	return svc.(*DefaultSystemService), nil
 }
 
-// initializeAndStart registers plugins and starts the system
-func initializeAndStart(sys *DefaultSystemService, plugins []plugin.Plugin) error {
-	ctx := infraContext.Background()
+// initializeAndStart initializes the system and registers plugins
+func initializeAndStart(sys system.System, plugins []plugin.Plugin, logger logging.Logger) error {
+	ctx := contextImpl.NewContext()
 
-	// Initialize the system
-	if err := sys.Initialize(ctx); err != nil {
-		return err
-	}
-
-	// Register all plugins - cast to concrete type to access RegisterPlugin
-	if defaultPluginMgr, ok := sys.PluginManager().(*plugin.DefaultPluginManager); ok {
+	// Register all plugins if plugin manager is available
+	if pluginMgr := sys.PluginManager(); pluginMgr != nil {
 		for _, plugin := range plugins {
-			if err := defaultPluginMgr.RegisterPlugin(plugin); err != nil {
+			if err := pluginMgr.Load(ctx, plugin.ID(), sys.Registry()); err != nil {
+				logger.Error("Failed to load plugin: %s - %v", plugin.ID(), err)
 				return err
 			}
 		}
 	}
 
-	// Start the system
-	return sys.Start(ctx)
-}
-
-// CreateConfiguration creates a configuration from the Config
-func (c *Config) CreateConfiguration() config.Configuration {
-	cfg := config.CreateDefaultConfig()
-	cfg.Set("system.serviceId", c.ServiceID)
-	cfg.Set("system.storage.rootPath", c.StorageConfig.RootPath)
-	cfg.Set("system.storage.defaultEngine", c.StorageConfig.DefaultEngine)
-	return cfg
+	logger.Info("System initialized and started successfully")
+	return nil
 }
 
 // StartWithFx is the public API for starting a system with fx
@@ -189,11 +174,13 @@ func createFxApp(config *SystemConfig) *fx.App {
 		fx.Provide(
 			func() *Config { return config.Config },
 			func() []plugin.Plugin { return config.Plugins },
-			func() component.Registry { return config.Registry },
-			func() plugin.PluginManager { return config.PluginMgr },
+			func() registry.Registry { return config.Registry },
 			func() event.EventBus { return config.EventBus },
 			func() storage.MultiStore { return config.MultiStore },
-			provideSystemService,
+			func() logging.Logger { return config.Logger },
+			func() plugin.PluginManager { return config.PluginMgr },
+			provideConfiguration,
+			provideSystem,
 		),
 		fx.Invoke(initializeAndStart),
 		fx.WithLogger(func() fxevent.Logger {

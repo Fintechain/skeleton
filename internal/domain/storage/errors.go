@@ -2,38 +2,37 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 )
 
-// Standard storage errors
-var (
+// Standard storage error codes
+const (
 	// ErrKeyNotFound is returned when a key doesn't exist in a store
-	ErrKeyNotFound = errors.New("key not found")
+	ErrKeyNotFound = "storage.key_not_found"
 
 	// ErrStoreNotFound is returned when a store doesn't exist
-	ErrStoreNotFound = errors.New("store not found")
+	ErrStoreNotFound = "storage.store_not_found"
 
 	// ErrStoreClosed is returned when operations are performed on a closed store
-	ErrStoreClosed = errors.New("store is closed")
+	ErrStoreClosed = "storage.store_closed"
 
 	// ErrStoreExists is returned when creating a store that already exists
-	ErrStoreExists = errors.New("store already exists")
+	ErrStoreExists = "storage.store_exists"
 
 	// ErrEngineNotFound is returned when an engine doesn't exist
-	ErrEngineNotFound = errors.New("engine not found")
+	ErrEngineNotFound = "storage.engine_not_found"
 
 	// ErrTxNotActive is returned when operations are performed on a non-active transaction
-	ErrTxNotActive = errors.New("transaction not active")
+	ErrTxNotActive = "storage.transaction_not_active"
 
 	// ErrTxReadOnly is returned when write operations are performed on a read-only transaction
-	ErrTxReadOnly = errors.New("transaction is read-only")
+	ErrTxReadOnly = "storage.transaction_read_only"
 
 	// ErrVersionNotFound is returned when a version doesn't exist
-	ErrVersionNotFound = errors.New("version not found")
+	ErrVersionNotFound = "storage.version_not_found"
 
 	// ErrInvalidConfig is returned when invalid configuration is provided
-	ErrInvalidConfig = errors.New("invalid configuration")
+	ErrInvalidConfig = "storage.invalid_config"
 )
 
 // WrapError wraps an error with additional context.
@@ -47,45 +46,45 @@ func WrapError(err error, context string) error {
 
 // IsKeyNotFound returns true if the error indicates a key was not found.
 func IsKeyNotFound(err error) bool {
-	return errors.Is(err, ErrKeyNotFound)
+	return err != nil && err.Error() == ErrKeyNotFound
 }
 
 // IsStoreNotFound returns true if the error indicates a store was not found.
 func IsStoreNotFound(err error) bool {
-	return errors.Is(err, ErrStoreNotFound)
+	return err != nil && err.Error() == ErrStoreNotFound
 }
 
 // IsStoreClosed returns true if the error indicates a store is closed.
 func IsStoreClosed(err error) bool {
-	return errors.Is(err, ErrStoreClosed)
+	return err != nil && err.Error() == ErrStoreClosed
 }
 
 // IsStoreExists returns true if the error indicates a store already exists.
 func IsStoreExists(err error) bool {
-	return errors.Is(err, ErrStoreExists)
+	return err != nil && err.Error() == ErrStoreExists
 }
 
 // IsEngineNotFound returns true if the error indicates an engine was not found.
 func IsEngineNotFound(err error) bool {
-	return errors.Is(err, ErrEngineNotFound)
+	return err != nil && err.Error() == ErrEngineNotFound
 }
 
 // IsTxNotActive returns true if the error indicates a transaction is not active.
 func IsTxNotActive(err error) bool {
-	return errors.Is(err, ErrTxNotActive)
+	return err != nil && err.Error() == ErrTxNotActive
 }
 
 // IsTxReadOnly returns true if the error indicates a transaction is read-only.
 func IsTxReadOnly(err error) bool {
-	return errors.Is(err, ErrTxReadOnly)
+	return err != nil && err.Error() == ErrTxReadOnly
 }
 
 // IsVersionNotFound returns true if the error indicates a version was not found.
 func IsVersionNotFound(err error) bool {
-	return errors.Is(err, ErrVersionNotFound)
+	return err != nil && err.Error() == ErrVersionNotFound
 }
 
 // IsInvalidConfig returns true if the error indicates invalid configuration.
 func IsInvalidConfig(err error) bool {
-	return errors.Is(err, ErrInvalidConfig)
+	return err != nil && err.Error() == ErrInvalidConfig
 }

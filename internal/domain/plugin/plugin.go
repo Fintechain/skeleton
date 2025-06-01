@@ -2,7 +2,8 @@
 package plugin
 
 import (
-	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/context"
+	"github.com/fintechain/skeleton/internal/domain/registry"
 )
 
 // PluginInfo provides metadata about a plugin.
@@ -16,27 +17,23 @@ type PluginInfo struct {
 }
 
 // Plugin is a container for components that extends the system.
+// It composes Identifiable to inherit ID, Name, Description, and Version methods.
 type Plugin interface {
-	// Identity
-	ID() string
-	Version() string
+	registry.Identifiable
 
 	// Lifecycle
-	Load(ctx component.Context, registry component.Registry) error
-	Unload(ctx component.Context) error
-
-	// Components
-	Components() []component.Component
+	Load(ctx context.Context, registrar registry.Registry) error
+	Unload(ctx context.Context) error
 }
 
 // PluginManager handles plugin discovery and lifecycle.
 type PluginManager interface {
 	// Discovery
-	Discover(ctx component.Context, location string) ([]PluginInfo, error)
+	Discover(ctx context.Context, location string) ([]PluginInfo, error)
 
 	// Lifecycle
-	Load(ctx component.Context, id string, registry component.Registry) error
-	Unload(ctx component.Context, id string) error
+	Load(ctx context.Context, id string, registrar registry.Registry) error
+	Unload(ctx context.Context, id string) error
 
 	// Information
 	ListPlugins() []PluginInfo

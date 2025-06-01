@@ -3,6 +3,7 @@ package service
 
 import (
 	"github.com/fintechain/skeleton/internal/domain/component"
+	"github.com/fintechain/skeleton/internal/domain/context"
 )
 
 // ServiceStatus represents the status of a service.
@@ -22,15 +23,23 @@ type Service interface {
 	component.Component
 
 	// Service lifecycle
-	Start(ctx component.Context) error
-	Stop(ctx component.Context) error
+	Start(ctx context.Context) error
+	Stop(ctx context.Context) error
 	Status() ServiceStatus
 }
 
 // ServiceConfig defines the configuration for creating a service.
 type ServiceConfig struct {
 	component.ComponentConfig
-	// Service-specific configuration properties
+	// Service-specific configuration properties can be added here
+}
+
+// NewServiceConfig creates a new ServiceConfig with the given parameters.
+// This ensures the component type is set to TypeService.
+func NewServiceConfig(id, name, description string) ServiceConfig {
+	return ServiceConfig{
+		ComponentConfig: component.NewComponentConfig(id, name, component.TypeService, description),
+	}
 }
 
 // ServiceFactory creates services from configuration.

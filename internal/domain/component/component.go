@@ -2,53 +2,36 @@
 package component
 
 import (
-	"time"
+	"github.com/fintechain/skeleton/internal/domain/context"
+	"github.com/fintechain/skeleton/internal/domain/registry"
+	sys "github.com/fintechain/skeleton/internal/domain/system"
 )
 
-// ComponentType represents the type of a component.
-type ComponentType string
+// ComponentType is an alias to registry.IdentifiableType to unify the type system
+type ComponentType = registry.IdentifiableType
 
+// Re-export component type constants for convenience
 const (
-	// Basic component types
-	TypeBasic       ComponentType = "basic"
-	TypeOperation   ComponentType = "operation"
-	TypeService     ComponentType = "service"
-	TypeSystem      ComponentType = "system"
-	TypeApplication ComponentType = "application"
+	TypeBasic       = registry.TypeBasic
+	TypeOperation   = registry.TypeOperation
+	TypeService     = registry.TypeService
+	TypeSystem      = registry.TypeSystem
+	TypeApplication = registry.TypeApplication
 )
 
 // Metadata is a map of key-value pairs for component metadata.
 type Metadata map[string]interface{}
 
-// Context represents the execution context for components.
-type Context interface {
-	// Value retrieves a value from the context.
-	Value(key interface{}) interface{}
-
-	// WithValue adds a value to the context and returns a new context.
-	WithValue(key, value interface{}) Context
-
-	// Deadline returns the deadline for the context, if any.
-	Deadline() (time.Time, bool)
-
-	// Done returns a channel that's closed when the context is done.
-	Done() <-chan struct{}
-
-	// Err returns the error why the context was canceled, if any.
-	Err() error
-}
-
 // Component is the fundamental building block of the system.
+// It composes Identifiable to inherit ID, Name, Description, and Version methods.
 type Component interface {
-	// Identity
-	ID() string
-	Name() string
-	Type() ComponentType
+	registry.Identifiable
 
-	// Metadata
+	// Component-specific properties
+	Type() ComponentType
 	Metadata() Metadata
 
 	// Lifecycle
-	Initialize(ctx Context) error
+	Initialize(ctx context.Context, system sys.System) error
 	Dispose() error
 }

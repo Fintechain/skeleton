@@ -1,7 +1,0 @@
-{
-  "serviceId": "",
-  "storage": {
-    "rootPath": "/invalid/nonexistent/path",
-    "defaultEngine": "unknown-engine"
-  }
-} 
