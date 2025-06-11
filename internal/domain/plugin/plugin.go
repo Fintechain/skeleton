@@ -1,49 +1,50 @@
-// Package plugin provides functionality for plugins in the system.
+// Package plugin provides plugin-related interfaces and types for the Fintechain Skeleton framework.
 package plugin
 
 import (
+	"github.com/fintechain/skeleton/internal/domain/component"
 	"github.com/fintechain/skeleton/internal/domain/context"
-	"github.com/fintechain/skeleton/internal/domain/registry"
 )
 
-// PluginInfo provides metadata about a plugin.
-type PluginInfo struct {
-	ID          string                 // Unique identifier
-	Name        string                 // Human-readable name
-	Version     string                 // Semantic version
-	Description string                 // Plugin description
-	Author      string                 // Plugin author/maintainer
-	Metadata    map[string]interface{} // Additional metadata
-}
+// PluginType represents the type of plugin
+type PluginType string
 
-// Plugin is a container for components that extends the system.
-// It composes Identifiable to inherit ID, Name, Description, and Version methods.
-type Plugin interface {
-	registry.Identifiable
-
-	// Lifecycle
-	Load(ctx context.Context, registrar registry.Registry) error
-	Unload(ctx context.Context) error
-}
-
-// PluginManager handles plugin discovery and lifecycle.
-type PluginManager interface {
-	// Discovery
-	Discover(ctx context.Context, location string) ([]PluginInfo, error)
-
-	// Lifecycle
-	Load(ctx context.Context, id string, registrar registry.Registry) error
-	Unload(ctx context.Context, id string) error
-
-	// Information
-	ListPlugins() []PluginInfo
-	GetPlugin(id string) (Plugin, error)
-}
-
-// Common error codes for plugin operations
+// Plugin type constants
 const (
-	ErrPluginNotFound  = "plugin.not_found"
-	ErrPluginLoad      = "plugin.load_failed"
-	ErrPluginUnload    = "plugin.unload_failed"
-	ErrPluginDiscovery = "plugin.discovery_failed"
+	TypeExtension   PluginType = "extension"   // Extends core functionality
+	TypeIntegration PluginType = "integration" // Integrates with external systems
+	TypeMiddleware  PluginType = "middleware"  // Provides middleware functionality
+	TypeConnector   PluginType = "connector"   // Connects to external services
+	TypeProcessor   PluginType = "processor"   // Processes data/events
+	TypeAdapter     PluginType = "adapter"     // Adapts interfaces/protocols
 )
+
+// Plugin represents a dynamically loadable component.
+// This is the core plugin interface without lifecycle management.
+type Plugin interface {
+	component.Service
+
+	// Plugin author/maintainer
+	Author() string
+
+	// Plugin type
+	PluginType() PluginType
+}
+
+// PluginManager manages plugin lifecycle and discovery.
+// This is the core plugin manager interface without service lifecycle.
+type PluginManager interface {
+	component.Service
+
+	// Plugin registry operations
+	Add(pluginID component.ComponentID, plugin Plugin) error
+	Remove(pluginID component.ComponentID) error
+
+	// Plugin execution
+	StartPlugin(ctx context.Context, pluginID component.ComponentID) error
+	StopPlugin(ctx context.Context, pluginID component.ComponentID) error
+
+	// Plugin queries
+	GetPlugin(pluginID component.ComponentID) (Plugin, error)
+	ListPlugins() []component.ComponentID
+}

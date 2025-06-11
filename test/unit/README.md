@@ -9,7 +9,6 @@ test/unit/
 ├── README.md                   # This documentation
 ├── mocks/                      # Centralized mock implementations
 │   ├── factory.go             # Mock factory for dependency injection
-│   ├── domain_mocks.go        # Domain interface mocks
 │   ├── registry_mock.go       # Registry interface mocks
 │   ├── component_mock.go      # Component interface mocks
 │   ├── context_mock.go        # Context interface mocks

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0] - 2024-12-19
+
+### Major Changes
+- Complete framework rewrite and architecture overhaul
+- Breaking changes across all components
+- New component lifecycle management
+- Enhanced plugin system and runtime environment
+
 ## [2.0.0] - 2024-12-19
 
 ### Major Improvements

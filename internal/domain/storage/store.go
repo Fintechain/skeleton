@@ -3,40 +3,42 @@ package storage
 
 // Store defines the core storage operations that all backends must implement.
 type Store interface {
-	// Basic CRUD operations
-
-	// Get retrieves the value for the given key.
-	// Returns ErrKeyNotFound if the key doesn't exist.
+	// Get retrieves the value associated with the given key.
 	Get(key []byte) ([]byte, error)
 
-	// Set stores the value for the given key.
-	// Overwrites any existing value.
+	// Set stores a value for the given key.
 	Set(key, value []byte) error
 
-	// Delete removes the key-value pair.
-	// It's idempotent (no error if key doesn't exist).
+	// Delete removes the key-value pair for the given key.
 	Delete(key []byte) error
 
-	// Has checks if a key exists.
-	// More efficient than Get for existence checks.
+	// Has checks whether a key exists in the store.
 	Has(key []byte) (bool, error)
 
-	// Iteration over all key-value pairs
-
-	// Iterate calls fn for each key-value pair, stops if fn returns false.
-	// The key and value byte slices must not be modified by fn.
+	// Iterate calls the provided function for each key-value pair in the store.
 	Iterate(fn func(key, value []byte) bool) error
 
-	// Resource cleanup
-
-	// Close releases resources and makes the store unusable.
+	// Close releases all resources associated with the store.
 	Close() error
 
-	// Store metadata
-
-	// Name returns the store identifier.
+	// Name returns the name of this store instance.
 	Name() string
 
-	// Path returns the storage path/location.
+	// Path returns the storage path or location for this store.
 	Path() string
+}
+
+// Engine defines the factory interface for storage backend implementations.
+type Engine interface {
+	// Name returns the unique identifier for this storage engine.
+	Name() string
+
+	// Create creates a new store instance with the specified configuration.
+	Create(name, path string, config Config) (Store, error)
+
+	// Open opens an existing store at the specified path.
+	Open(name, path string) (Store, error)
+
+	// Capabilities returns the features supported by this storage engine.
+	Capabilities() Capabilities
 }

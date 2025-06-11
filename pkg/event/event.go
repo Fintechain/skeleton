@@ -1,21 +1,29 @@
-// Package event provides event bus functionality for component communication.
+// Package event provides event system interfaces and implementations.
 package event
 
 import (
+	"time"
+
 	"github.com/fintechain/skeleton/internal/domain/event"
-	eventImpl "github.com/fintechain/skeleton/internal/infrastructure/event"
+	infraEvent "github.com/fintechain/skeleton/internal/infrastructure/event"
 )
 
-// Re-export event interfaces
+// Core interfaces
+type Event = event.Event
 type EventHandler = event.EventHandler
 type Subscription = event.Subscription
 type EventBus = event.EventBus
+type EventBusService = event.EventBusService
 
-// Re-export event types
-type Event = event.Event
+// Factory functions
+var NewEventBus = infraEvent.NewEventBus
 
-// NewEventBus creates a new EventBus instance.
-// This factory function provides access to the concrete event bus implementation.
-func NewEventBus() EventBus {
-	return eventImpl.NewEventBus()
+// Event constructor helper
+func NewEvent(topic, source string, payload map[string]interface{}) *Event {
+	return &Event{
+		Topic:   topic,
+		Source:  source,
+		Time:    time.Now(),
+		Payload: payload,
+	}
 }

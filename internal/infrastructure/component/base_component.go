@@ -5,126 +5,111 @@ import (
 
 	"github.com/fintechain/skeleton/internal/domain/component"
 	"github.com/fintechain/skeleton/internal/domain/context"
-	"github.com/fintechain/skeleton/internal/domain/system"
 )
 
-// BaseComponent provides a concrete implementation of the Component interface.
+// BaseComponent provides common component functionality that can be embedded
+// in concrete component implementations.
 type BaseComponent struct {
-	config   component.ComponentConfig
-	metadata component.Metadata
-	mu       sync.RWMutex
+	id          component.ComponentID
+	name        string
+	description string
+	version     string
+	metadata    component.Metadata
+	systemRef   component.System
+	initialized bool
+	mu          sync.RWMutex
 }
 
-// NewBaseComponent creates a new base component instance.
-// This constructor accepts configuration and minimal dependencies to keep it simple and focused.
-func NewBaseComponent(config component.ComponentConfig) component.Component {
+// NewBaseComponent creates a new base component with the provided configuration.
+func NewBaseComponent(config component.ComponentConfig) *BaseComponent {
+	version := config.Version
+	if version == "" {
+		version = "1.0.0"
+	}
+
 	return &BaseComponent{
-		config:   config,
-		metadata: make(component.Metadata),
+		id:          config.ID,
+		name:        config.Name,
+		description: config.Description,
+		version:     version,
+		metadata:    config.Properties,
 	}
 }
 
-// ID returns the component's unique identifier.
-func (c *BaseComponent) ID() string {
-	return c.config.ID
+// ID returns the unique identifier for this component.
+func (c *BaseComponent) ID() component.ComponentID {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.id
 }
 
-// Name returns the component's human-readable name.
+// Name returns a human-readable name for this component.
 func (c *BaseComponent) Name() string {
-	return c.config.Name
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.name
 }
 
-// Description returns the component's description.
+// Description returns a detailed description of the component's purpose.
 func (c *BaseComponent) Description() string {
-	return c.config.Description
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.description
 }
 
-// Version returns the component's version.
+// Version returns the version string for this component.
 func (c *BaseComponent) Version() string {
-	if c.config.Version == "" {
-		return "1.0.0" // Default version
-	}
-	return c.config.Version
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.version
 }
 
-// Type returns the component's type.
+// Type returns the component type classification.
 func (c *BaseComponent) Type() component.ComponentType {
-	return component.ComponentType(c.config.Type)
+	return component.TypeComponent
 }
 
-// Metadata returns a copy of the component's metadata to prevent concurrent map access.
+// Metadata returns component metadata as key-value pairs.
 func (c *BaseComponent) Metadata() component.Metadata {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-
-	// Return a copy to prevent concurrent map access
-	metadata := make(component.Metadata, len(c.metadata))
-	for k, v := range c.metadata {
-		metadata[k] = v
-	}
-
-	// Include configuration properties in metadata
-	for k, v := range c.config.Properties {
-		metadata[k] = v
-	}
-
-	// Include dependencies in metadata
-	if len(c.config.Dependencies) > 0 {
-		metadata["dependencies"] = c.config.Dependencies
-	}
-
-	return metadata
+	return c.metadata
 }
 
-// SetMetadata sets a metadata key-value pair (thread-safe).
-func (c *BaseComponent) SetMetadata(key string, value interface{}) {
+// Initialize prepares the component for use within the system.
+func (c *BaseComponent) Initialize(ctx context.Context, system component.System) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.metadata[key] = value
-}
+	if c.initialized {
+		return nil
+	}
 
-// Initialize initializes the component with the given context and system.
-// This follows the exact interface signature: Initialize(ctx context.Context, system sys.System) error
-func (c *BaseComponent) Initialize(ctx context.Context, system system.System) error {
-	// Set initialization metadata
-	c.SetMetadata("initialized", true)
-	c.SetMetadata("system_available", system != nil)
-
-	// Basic components don't need complex initialization
-	// Subclasses can override this method for more complex initialization logic
+	c.systemRef = system
+	c.initialized = true
 	return nil
 }
 
-// Dispose releases resources used by the component.
+// Dispose cleans up component resources and prepares for shutdown.
 func (c *BaseComponent) Dispose() error {
-	// Set disposal metadata
-	c.SetMetadata("disposed", true)
-
-	// Clear metadata to help with garbage collection
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.metadata = make(component.Metadata)
 
+	c.systemRef = nil
+	c.initialized = false
 	return nil
 }
 
-// GetConfig returns the component's configuration (for subclasses).
-func (c *BaseComponent) GetConfig() component.ComponentConfig {
-	return c.config
+// system returns the system reference (protected access).
+func (c *BaseComponent) system() component.System {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.systemRef
 }
 
-// Dependencies returns the component's dependencies.
-func (c *BaseComponent) Dependencies() []string {
-	return c.config.Dependencies
-}
-
-// HasDependency checks if the component has a specific dependency.
-func (c *BaseComponent) HasDependency(id string) bool {
-	for _, dep := range c.config.Dependencies {
-		if dep == id {
-			return true
-		}
-	}
-	return false
+// IsInitialized returns whether the component has been initialized.
+func (c *BaseComponent) IsInitialized() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.initialized
 }

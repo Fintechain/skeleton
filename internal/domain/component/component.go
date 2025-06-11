@@ -1,37 +1,77 @@
-// Package component provides the core interfaces and types for the component system.
+// Package component provides the core component system for Fintechain Skeleton.
+//
+// The component system implements a Domain-Driven Design (DDD) approach with
+// three core types: Components (basic entities), Operations (executable tasks),
+// and Services (long-running processes).
 package component
 
 import (
 	"github.com/fintechain/skeleton/internal/domain/context"
-	"github.com/fintechain/skeleton/internal/domain/registry"
-	sys "github.com/fintechain/skeleton/internal/domain/system"
 )
 
-// ComponentType is an alias to registry.IdentifiableType to unify the type system
-type ComponentType = registry.IdentifiableType
+// ComponentType represents the type classification of a component.
+type ComponentType string
 
-// Re-export component type constants for convenience
+// ComponentID represents a unique identifier for a component within the system.
+type ComponentID string
+
+// StoreID represents a unique identifier for a storage instance.
+type StoreID string
+
+// EngineID represents a unique identifier for a storage engine.
+type EngineID string
+
 const (
-	TypeBasic       = registry.TypeBasic
-	TypeOperation   = registry.TypeOperation
-	TypeService     = registry.TypeService
-	TypeSystem      = registry.TypeSystem
-	TypeApplication = registry.TypeApplication
+	// TypeComponent represents a basic managed entity.
+	TypeComponent ComponentType = "component"
+
+	// TypeOperation represents an executable instruction.
+	TypeOperation ComponentType = "operation"
+
+	// TypeService represents a long-running process.
+	TypeService ComponentType = "service"
+
+	// Legacy types for backward compatibility (deprecated)
+	TypeBasic       ComponentType = "basic"
+	TypeSystem      ComponentType = "system"
+	TypeApplication ComponentType = "application"
 )
 
-// Metadata is a map of key-value pairs for component metadata.
+// Metadata represents component metadata as key-value pairs.
 type Metadata map[string]interface{}
 
-// Component is the fundamental building block of the system.
-// It composes Identifiable to inherit ID, Name, Description, and Version methods.
-type Component interface {
-	registry.Identifiable
+// Identifiable provides core identity properties that all components must implement.
+type Identifiable interface {
+	// ID returns the unique identifier for this component.
+	ID() ComponentID
 
-	// Component-specific properties
+	// Name returns a human-readable name for this component.
+	Name() string
+
+	// Description returns a detailed description of the component's purpose.
+	Description() string
+
+	// Version returns the version string for this component.
+	Version() string
+}
+
+// Component represents the fundamental building block of the system.
+// Components follow a lifecycle: Creation -> Registration -> Initialization -> Active -> Disposal.
+type Component interface {
+	Identifiable
+
+	// Type returns the component type classification.
 	Type() ComponentType
+
+	// Metadata returns component metadata as key-value pairs.
+	// Can return nil if no metadata is available.
 	Metadata() Metadata
 
-	// Lifecycle
-	Initialize(ctx context.Context, system sys.System) error
+	// Initialize prepares the component for use within the system.
+	// Should be idempotent - safe to call multiple times.
+	Initialize(ctx context.Context, system System) error
+
+	// Dispose cleans up component resources and prepares for shutdown.
+	// Should be idempotent - safe to call multiple times.
 	Dispose() error
 }

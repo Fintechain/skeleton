@@ -1,0 +1,71 @@
+with-expecter: true
+dir: "test/unit/mocks"
+filename: "{{.InterfaceName | lower}}_mock.go"
+mockname: "Mock{{.InterfaceName}}"
+outpkg: mocks
+structname: "Mock{{.InterfaceName}}"
+packages:
+  github.com/fintechain/skeleton/internal/domain/component:
+    interfaces:
+      Component:
+        filename: "component_mock.go"
+      Registry:
+        filename: "registry_mock.go"
+      System:
+        filename: "system_mock.go"
+      Factory:
+        filename: "factory_mock.go"
+      Operation:
+        filename: "operation_mock.go"
+      Service:
+        filename: "service_mock.go"
+  github.com/fintechain/skeleton/internal/domain/plugin:
+    interfaces:
+      Plugin:
+        filename: "plugin_mock.go"
+      PluginManager:
+        filename: "pluginmanager_mock.go"
+  github.com/fintechain/skeleton/internal/domain/storage:
+    interfaces:
+      Store:
+        filename: "store_mock.go"
+      Engine:
+        filename: "engine_mock.go"
+      StoreConfig:
+        filename: "storeconfig_mock.go"
+      Transactional:
+        filename: "transactional_mock.go"
+      Transaction:
+        filename: "transaction_mock.go"
+      MultiStore:
+        filename: "multistore_mock.go"
+      MultiStoreService:
+        filename: "multistoreservice_mock.go"
+      Versioned:
+        filename: "versioned_mock.go"
+      RangeQueryable:
+        filename: "rangequeryable_mock.go"
+  github.com/fintechain/skeleton/internal/domain/config:
+    interfaces:
+      Configuration:
+        filename: "config_mock.go"
+      ConfigurationSource:
+        filename: "config_source_mock.go"
+  github.com/fintechain/skeleton/internal/domain/context:
+    interfaces:
+      Context:
+        filename: "context_mock.go"
+  github.com/fintechain/skeleton/internal/domain/logging:
+    interfaces:
+      Logger:
+        filename: "logger_mock.go"
+      LoggerService:
+        filename: "loggerservice_mock.go"
+  github.com/fintechain/skeleton/internal/domain/event:
+    interfaces:
+      Subscription:
+        filename: "subscription_mock.go"
+      EventBus:
+        filename: "eventbus_mock.go"
+      EventBusService:
+        filename: "eventbusservice_mock.go" 

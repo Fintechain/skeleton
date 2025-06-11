@@ -1,120 +1,267 @@
 package context
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/fintechain/skeleton/pkg/context"
+	domainContext "github.com/fintechain/skeleton/internal/domain/context"
+	"github.com/fintechain/skeleton/internal/infrastructure/context"
 )
 
-// TestNewContext tests the context constructor function
 func TestNewContext(t *testing.T) {
 	ctx := context.NewContext()
 
+	// Verify interface compliance
+	var _ domainContext.Context = ctx
+
+	// Verify initial state
 	assert.NotNil(t, ctx)
+	assert.NotNil(t, ctx.Done())
 	assert.Nil(t, ctx.Err())
+	assert.False(t, ctx.IsCancelled())
 
-	// Test that Done channel is not closed initially
-	select {
-	case <-ctx.Done():
-		t.Error("Done channel should not be closed for new context")
-	default:
-		// Expected behavior
-	}
-
-	// Test that deadline is not set initially
+	// Verify deadline is not set
 	deadline, hasDeadline := ctx.Deadline()
 	assert.False(t, hasDeadline)
 	assert.True(t, deadline.IsZero())
 }
 
-// TestWrapContext tests the context wrapping function
-func TestWrapContext(t *testing.T) {
+func TestNewContextWithDeadline(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    context.Context
-		expected string
+		name        string
+		deadline    time.Time
+		expectError bool
+		description string
 	}{
 		{
-			name:     "wrap nil context",
-			input:    nil,
-			expected: "should create new context when wrapping nil",
+			name:        "future deadline",
+			deadline:    time.Now().Add(time.Hour),
+			expectError: false,
+			description: "Should create context with future deadline",
 		},
 		{
-			name:     "wrap existing context",
-			input:    context.NewContext(),
-			expected: "should wrap existing context",
+			name:        "past deadline",
+			deadline:    time.Now().Add(-time.Hour),
+			expectError: false,
+			description: "Should create context with past deadline (no auto-cancel)",
+		},
+		{
+			name:        "zero deadline",
+			deadline:    time.Time{},
+			expectError: false,
+			description: "Should create context with zero deadline",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wrapped := context.WrapContext(tt.input)
+			ctx := context.NewContextWithDeadline(tt.deadline)
 
-			assert.NotNil(t, wrapped, tt.expected)
-			assert.Nil(t, wrapped.Err())
+			// Verify interface compliance
+			var _ domainContext.Context = ctx
 
-			// Test that Done channel is not closed initially
-			select {
-			case <-wrapped.Done():
-				t.Error("Done channel should not be closed for wrapped context")
-			default:
-				// Expected behavior
+			assert.NotNil(t, ctx)
+
+			// Check deadline
+			deadline, hasDeadline := ctx.Deadline()
+			if tt.deadline.IsZero() {
+				assert.False(t, hasDeadline)
+				assert.True(t, deadline.IsZero())
+			} else {
+				assert.True(t, hasDeadline)
+				assert.Equal(t, tt.deadline, deadline)
 			}
 		})
 	}
 }
 
-// TestContextInterfaceCompliance verifies the implementation satisfies the domain interface
-func TestContextInterfaceCompliance(t *testing.T) {
-	// Verify interface compliance
-	var _ context.Context = context.NewContext()
-	var _ context.Context = context.WrapContext(nil)
+func TestNewContextWithTimeout(t *testing.T) {
+	tests := []struct {
+		name            string
+		timeout         time.Duration
+		expectCancelled bool
+		description     string
+	}{
+		{
+			name:            "positive timeout",
+			timeout:         time.Hour,
+			expectCancelled: false,
+			description:     "Should create context with positive timeout",
+		},
+		{
+			name:            "zero timeout",
+			timeout:         0,
+			expectCancelled: true,
+			description:     "Should create immediately cancelled context for zero timeout",
+		},
+		{
+			name:            "negative timeout",
+			timeout:         -time.Hour,
+			expectCancelled: true,
+			description:     "Should create immediately cancelled context for negative timeout",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.NewContextWithTimeout(tt.timeout)
+
+			// Verify interface compliance
+			var _ domainContext.Context = ctx
+
+			assert.NotNil(t, ctx)
+
+			if tt.expectCancelled {
+				assert.True(t, ctx.IsCancelled())
+				assert.NotNil(t, ctx.Err())
+				assert.Contains(t, ctx.Err().Error(), domainContext.ErrContextDeadlineExceeded)
+			} else {
+				assert.False(t, ctx.IsCancelled())
+				assert.Nil(t, ctx.Err())
+
+				// Check deadline is set correctly
+				deadline, hasDeadline := ctx.Deadline()
+				assert.True(t, hasDeadline)
+				assert.True(t, deadline.After(time.Now()))
+			}
+		})
+	}
 }
 
-// TestContextValue tests context value operations
 func TestContextValue(t *testing.T) {
-	ctx := context.NewContext()
+	tests := []struct {
+		name        string
+		key         interface{}
+		value       interface{}
+		lookupKey   interface{}
+		expectFound bool
+		description string
+	}{
+		{
+			name:        "string key and value",
+			key:         "test-key",
+			value:       "test-value",
+			lookupKey:   "test-key",
+			expectFound: true,
+			description: "Should store and retrieve string values",
+		},
+		{
+			name:        "int key and value",
+			key:         42,
+			value:       "forty-two",
+			lookupKey:   42,
+			expectFound: true,
+			description: "Should store and retrieve with int keys",
+		},
+		{
+			name:        "struct key and value",
+			key:         struct{ name string }{"test"},
+			value:       "struct-value",
+			lookupKey:   struct{ name string }{"test"},
+			expectFound: true,
+			description: "Should store and retrieve with struct keys",
+		},
+		{
+			name:        "nil key",
+			key:         nil,
+			value:       "nil-key-value",
+			lookupKey:   nil,
+			expectFound: false,
+			description: "Should handle nil keys gracefully",
+		},
+		{
+			name:        "key not found",
+			key:         "existing-key",
+			value:       "existing-value",
+			lookupKey:   "non-existent-key",
+			expectFound: false,
+			description: "Should return nil for non-existent keys",
+		},
+	}
 
-	// Test getting non-existent value
-	value := ctx.Value("non-existent")
-	assert.Nil(t, value)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.NewContext()
 
-	// Test setting and getting values
-	key1 := "test-key-1"
-	value1 := "test-value-1"
+			// Set value if key is not nil
+			if tt.key != nil {
+				newCtx := ctx.WithValue(tt.key, tt.value)
+				ctx = newCtx.(*context.DomainContext)
+			}
 
-	newCtx := ctx.WithValue(key1, value1)
-	assert.NotNil(t, newCtx)
-	assert.NotEqual(t, ctx, newCtx) // Should return new context
+			// Lookup value
+			result := ctx.Value(tt.lookupKey)
 
-	// Test getting value from new context
-	retrieved := newCtx.Value(key1)
-	assert.Equal(t, value1, retrieved)
-
-	// Test that original context doesn't have the value
-	originalValue := ctx.Value(key1)
-	assert.Nil(t, originalValue)
+			if tt.expectFound {
+				assert.Equal(t, tt.value, result)
+			} else {
+				assert.Nil(t, result)
+			}
+		})
+	}
 }
 
-// TestContextWithValue tests context value chaining
 func TestContextWithValue(t *testing.T) {
-	ctx := context.NewContext()
+	tests := []struct {
+		name        string
+		key         interface{}
+		value       interface{}
+		expectSame  bool
+		description string
+	}{
+		{
+			name:        "valid key and value",
+			key:         "test-key",
+			value:       "test-value",
+			expectSame:  false,
+			description: "Should create new context with value",
+		},
+		{
+			name:        "nil key",
+			key:         nil,
+			value:       "test-value",
+			expectSame:  true,
+			description: "Should return same context for nil key",
+		},
+	}
 
-	// Chain multiple values
-	ctx1 := ctx.WithValue("key1", "value1")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			originalCtx := context.NewContext()
+			newCtx := originalCtx.WithValue(tt.key, tt.value)
+
+			// Verify interface compliance
+			var _ domainContext.Context = newCtx
+
+			if tt.expectSame {
+				assert.Same(t, originalCtx, newCtx)
+			} else {
+				assert.NotSame(t, originalCtx, newCtx)
+
+				// Verify value is accessible in new context
+				if tt.key != nil {
+					assert.Equal(t, tt.value, newCtx.Value(tt.key))
+				}
+			}
+		})
+	}
+}
+
+func TestContextWithValueInheritance(t *testing.T) {
+	// Create parent context with multiple values
+	parentCtx := context.NewContext()
+	ctx1 := parentCtx.WithValue("key1", "value1")
 	ctx2 := ctx1.WithValue("key2", "value2")
 	ctx3 := ctx2.WithValue("key3", "value3")
 
-	// Test that all values are accessible from the final context
+	// Verify all values are accessible
 	assert.Equal(t, "value1", ctx3.Value("key1"))
 	assert.Equal(t, "value2", ctx3.Value("key2"))
 	assert.Equal(t, "value3", ctx3.Value("key3"))
 
-	// Test that intermediate contexts only have their values
+	// Verify parent contexts still have their values
 	assert.Equal(t, "value1", ctx1.Value("key1"))
 	assert.Nil(t, ctx1.Value("key2"))
 	assert.Nil(t, ctx1.Value("key3"))
@@ -124,113 +271,189 @@ func TestContextWithValue(t *testing.T) {
 	assert.Nil(t, ctx2.Value("key3"))
 }
 
-// TestContextValueTypes tests context with different value types
-func TestContextValueTypes(t *testing.T) {
-	ctx := context.NewContext()
-
-	// Test different value types
-	testCases := []struct {
-		key   interface{}
-		value interface{}
-	}{
-		{"string-key", "string-value"},
-		{42, "int-key"},
-		{"struct-value", struct{ Name string }{Name: "test"}},
-		{"slice-value", []string{"a", "b", "c"}},
-		{"map-value", map[string]int{"count": 42}},
-	}
-
-	// Set all values
-	currentCtx := ctx
-	for _, tc := range testCases {
-		currentCtx = currentCtx.WithValue(tc.key, tc.value)
-	}
-
-	// Verify all values
-	for _, tc := range testCases {
-		retrieved := currentCtx.Value(tc.key)
-		assert.Equal(t, tc.value, retrieved)
-	}
-}
-
-// TestContextDeadline tests context deadline functionality
 func TestContextDeadline(t *testing.T) {
-	ctx := context.NewContext()
-
 	// Test context without deadline
+	ctx := context.NewContext()
 	deadline, hasDeadline := ctx.Deadline()
 	assert.False(t, hasDeadline)
 	assert.True(t, deadline.IsZero())
+
+	// Test context with deadline
+	expectedDeadline := time.Now().Add(time.Hour)
+	ctxWithDeadline := context.NewContextWithDeadline(expectedDeadline)
+	deadline, hasDeadline = ctxWithDeadline.Deadline()
+	assert.True(t, hasDeadline)
+	assert.Equal(t, expectedDeadline, deadline)
 }
 
-// TestContextDoneChannel tests the Done channel behavior
-func TestContextDoneChannel(t *testing.T) {
+func TestContextDone(t *testing.T) {
 	ctx := context.NewContext()
 
-	// Test that Done channel is not closed for new context
+	// Verify done channel is not closed initially
 	select {
 	case <-ctx.Done():
-		t.Error("Done channel should not be closed for new context")
+		t.Fatal("Done channel should not be closed initially")
 	default:
-		// Expected behavior
+		// Expected
+	}
+
+	// Cancel context
+	ctx.Cancel()
+
+	// Verify done channel is closed after cancellation
+	select {
+	case <-ctx.Done():
+		// Expected
+	default:
+		t.Fatal("Done channel should be closed after cancellation")
 	}
 }
 
-// TestContextErrorStates tests different error states
-func TestContextErrorStates(t *testing.T) {
+func TestContextErr(t *testing.T) {
 	ctx := context.NewContext()
 
-	// Test new context has no error
+	// Initially no error
 	assert.Nil(t, ctx.Err())
+
+	// Cancel context
+	ctx.Cancel()
+
+	// Should have cancellation error
+	assert.NotNil(t, ctx.Err())
+	assert.Contains(t, ctx.Err().Error(), domainContext.ErrContextCanceled)
 }
 
-// TestContextWrappingWithValues tests wrapping contexts that have values
-func TestContextWrappingWithValues(t *testing.T) {
-	// Create context with values
-	originalCtx := context.NewContext()
-	originalCtx = originalCtx.WithValue("original-key", "original-value")
-
-	// Wrap the context
-	wrappedCtx := context.WrapContext(originalCtx)
-
-	// Note: The current implementation may not preserve values when wrapping
-	// This test documents the current behavior
-	assert.NotNil(t, wrappedCtx)
-
-	// Test that wrapped context can have its own values
-	wrappedCtx = wrappedCtx.WithValue("wrapped-key", "wrapped-value")
-	assert.Equal(t, "wrapped-value", wrappedCtx.Value("wrapped-key"))
-}
-
-// TestContextConcurrency tests context operations under concurrent access
-func TestContextConcurrency(t *testing.T) {
+func TestContextCancel(t *testing.T) {
 	ctx := context.NewContext()
 
-	// Test concurrent value setting and getting
-	done := make(chan bool, 10)
+	// Initially not cancelled
+	assert.False(t, ctx.IsCancelled())
+	assert.Nil(t, ctx.Err())
 
-	// Start multiple goroutines setting values
-	for i := 0; i < 10; i++ {
-		go func(id int) {
-			defer func() { done <- true }()
+	// Cancel context
+	ctx.Cancel()
 
-			key := fmt.Sprintf("key-%d", id)
-			value := fmt.Sprintf("value-%d", id)
+	// Should be cancelled
+	assert.True(t, ctx.IsCancelled())
+	assert.NotNil(t, ctx.Err())
+	assert.Contains(t, ctx.Err().Error(), domainContext.ErrContextCanceled)
 
-			newCtx := ctx.WithValue(key, value)
-			retrieved := newCtx.Value(key)
+	// Multiple cancellations should be safe
+	ctx.Cancel()
+	assert.True(t, ctx.IsCancelled())
+}
 
-			assert.Equal(t, value, retrieved)
-		}(i)
-	}
+func TestContextDeadlineExpiration(t *testing.T) {
+	// Create context with very short timeout
+	ctx := context.NewContextWithTimeout(50 * time.Millisecond)
 
-	// Wait for all goroutines to complete
-	for i := 0; i < 10; i++ {
-		select {
-		case <-done:
-			// Expected
-		case <-time.After(1 * time.Second):
-			t.Error("Goroutine did not complete in time")
+	// Initially not cancelled
+	assert.False(t, ctx.IsCancelled())
+	assert.Nil(t, ctx.Err())
+
+	// Wait for deadline to expire
+	time.Sleep(100 * time.Millisecond)
+
+	// Should be cancelled due to deadline
+	assert.True(t, ctx.IsCancelled())
+	assert.NotNil(t, ctx.Err())
+	assert.Contains(t, ctx.Err().Error(), domainContext.ErrContextDeadlineExceeded)
+}
+
+func TestContextWithValueFromCancelledParent(t *testing.T) {
+	// Create and cancel parent context
+	parentCtx := context.NewContext()
+	parentCtx.Cancel()
+
+	// Create child context from cancelled parent
+	childCtx := parentCtx.WithValue("key", "value")
+
+	// Child should also be cancelled
+	assert.True(t, childCtx.(*context.DomainContext).IsCancelled())
+
+	// But should still have the value
+	assert.Equal(t, "value", childCtx.Value("key"))
+}
+
+func TestWrapContext(t *testing.T) {
+	// Test wrapping with nil
+	ctx := context.WrapContext(nil)
+	assert.NotNil(t, ctx)
+
+	// Verify interface compliance
+	var _ domainContext.Context = ctx
+
+	// Test wrapping with some value
+	ctx2 := context.WrapContext("some-context")
+	assert.NotNil(t, ctx2)
+
+	// Verify interface compliance
+	var _ domainContext.Context = ctx2
+}
+
+func TestContextThreadSafety(t *testing.T) {
+	ctx := context.NewContext()
+
+	// Test concurrent value access
+	done := make(chan bool)
+
+	// Writer goroutine
+	go func() {
+		for i := 0; i < 100; i++ {
+			newCtx := ctx.WithValue(i, i*2)
+			ctx = newCtx.(*context.DomainContext)
 		}
+		done <- true
+	}()
+
+	// Reader goroutine
+	go func() {
+		for i := 0; i < 100; i++ {
+			_ = ctx.Value(i)
+		}
+		done <- true
+	}()
+
+	// Wait for both goroutines
+	<-done
+	<-done
+
+	// Test should complete without race conditions
+}
+
+func TestContextInterfaceCompliance(t *testing.T) {
+	// Test all constructor functions return interface-compliant types
+	var _ domainContext.Context = context.NewContext()
+	var _ domainContext.Context = context.NewContextWithDeadline(time.Now().Add(time.Hour))
+	var _ domainContext.Context = context.NewContextWithTimeout(time.Hour)
+	var _ domainContext.Context = context.WrapContext(nil)
+}
+
+// Benchmark tests for performance verification
+func BenchmarkContextValue(b *testing.B) {
+	ctx := context.NewContext()
+	ctx = ctx.WithValue("key", "value").(*context.DomainContext)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ctx.Value("key")
+	}
+}
+
+func BenchmarkContextWithValue(b *testing.B) {
+	ctx := context.NewContext()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ctx = ctx.WithValue(i, i).(*context.DomainContext)
+	}
+}
+
+func BenchmarkContextDeadline(b *testing.B) {
+	ctx := context.NewContextWithDeadline(time.Now().Add(time.Hour))
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = ctx.Deadline()
 	}
 }
