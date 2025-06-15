@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.3.0] - 2024-12-19
+
+### Major Framework Consolidation and Cleanup
+
+#### Structural Changes
+- **Removed deprecated pkg/fx package** (533 lines) - functionality merged into pkg/runtime
+- **Removed old internal/fx implementation** (516 lines) - replaced with fx_core.go and fx_runtime.go
+- **Consolidated runtime API** - all FX functionality now accessible via pkg/runtime
+- **Removed outdated example projects** (fx-demo, traditional-runtime, individual plugins)
+- **Restructured documentation** from docs/development/ to docs/ root level
+- **Removed unused config implementations** (composite, env, file) - simplified to memory-based
+- **Removed old runtime builder pattern** - replaced with FX-based approach
+
+#### Documentation Overhaul
+- **Complete README.md rewrite** with accurate API references and working examples
+- **Fixed all pkg/fx references** to use correct pkg/runtime API throughout codebase
+- **Simplified examples/README.md** with focus on complete-app example
+- **Updated examples/complete-app** with proper structure (modes/, plugins/, providers/)
+- **Added comprehensive pkg/runtime/README.md** documentation
+- **Moved and updated plugin development guides**
+
+#### Code Quality Improvements
+- **Enhanced pkg/runtime/runtime.go** with proper FX integration (159 lines added)
+- **Refactored internal/infrastructure/config/memory.go** for better maintainability
+- **Added new pkg/config/ package** for clean configuration exports
+- **Removed 6,614 lines of outdated/duplicate code**
+- **Added comprehensive test structure** for new runtime package
+
+#### API Consolidation
+- **Unified API surface**: runtime.StartDaemon() and runtime.ExecuteCommand()
+- **Removed API confusion** between fx.* and runtime.* functions
+- **Maintained backward compatibility** while simplifying public interface
+- **Internal FX usage preserved** but hidden from public API
+
+#### Impact
+- **Files changed**: 34 files, +606/-6,614 lines
+- **Major cleanup and consolidation** effort, removing technical debt
+- **Cleaner, more maintainable API surface** while maintaining all functionality
+
+### Breaking Changes
+- All pkg/fx references must be updated to pkg/runtime
+- Import paths changed from "github.com/fintechain/skeleton/pkg/fx" to "github.com/fintechain/skeleton/pkg/runtime"
+- Function calls changed from fx.StartDaemon() to runtime.StartDaemon()
+- Function calls changed from fx.ExecuteCommand() to runtime.ExecuteCommand()
+
+### Migration Guide
+- Update imports: `"github.com/fintechain/skeleton/pkg/fx"` → `"github.com/fintechain/skeleton/pkg/runtime"`
+- Update function calls: `fx.StartDaemon()` → `runtime.StartDaemon()`
+- Update function calls: `fx.ExecuteCommand()` → `runtime.ExecuteCommand()`
+- All functionality remains the same, only the package name changed
+
 ## [0.2.0] - 2024-12-19
 
 ### Major Changes
