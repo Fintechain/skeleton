@@ -1,28 +1,28 @@
 # Fintechain Skeleton Framework
 
-> **Modern, Domain-Driven Application Framework for Go**
+> **Modern Go Framework for Domain-Driven Applications**
 
-A production-ready framework built on **Domain-Driven Design** and **Clean Architecture** principles, featuring automatic dependency injection, pluggable components, and dual runtime modes for both long-running services and CLI applications.
+A production-ready framework built on **Domain-Driven Design** and **Clean Architecture** principles, featuring automatic dependency injection, dual runtime modes, and a powerful plugin system.
 
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue.svg)](https://golang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#)
+[![Version](https://img.shields.io/badge/version-0.2.0-orange.svg)](CHANGELOG.md)
 
 ## 🚀 Quick Start
 
-Get a web service running in under 30 seconds:
+Get a service running in 30 seconds:
 
 ```go
 package main
 
 import (
-    "github.com/fintechain/skeleton/pkg/fx"
-    "github.com/fintechain/skeleton/pkg/plugin"
+    "github.com/fintechain/skeleton/pkg/runtime"
 )
 
 func main() {
-    err := fx.StartDaemon(
-        fx.WithPlugins(&WebServerPlugin{Port: 8080}),
+    // Start a long-running daemon
+    err := runtime.StartDaemon(
+        runtime.WithPlugins(myPlugin),
     )
     if err != nil {
         panic(err)
@@ -43,98 +43,80 @@ Building production Go applications often means:
 - ❌ Manual dependency wiring and lifecycle management
 - ❌ Scattered configuration and service discovery
 - ❌ Tight coupling between business logic and infrastructure
-- ❌ Difficult testing due to hard dependencies
+- ❌ Complex setup for both CLI tools and long-running services
 
 ### The Solution
 ```go
-// Before: Manual wiring, error-prone setup
+// Before: Manual wiring, complex setup
 config := loadConfig()
 logger := newLogger(config)
 db := newDatabase(config, logger)
 server := newWebServer(config, db, logger)
 // ... 50+ lines of manual setup
 
-// After: Declarative, automatic, reliable
-fx.StartDaemon(
-    fx.WithPlugins(&ConfigPlugin{}, &DatabasePlugin{}, &WebServerPlugin{}),
+// After: Declarative, automatic
+runtime.StartDaemon(
+    runtime.WithPlugins(webPlugin, dbPlugin),
 )
 ```
 
-### Key Benefits
-
-| Feature | Traditional Approach | Skeleton Framework |
-|---------|---------------------|-------------------|
-| **Dependency Injection** | Manual, error-prone | Automatic, type-safe |
-| **Architecture** | Coupled, monolithic | Clean, domain-driven |
-| **Testing** | Complex mocking | Built-in test support |
-| **Lifecycle** | Manual start/stop | Automatic management |
-| **Configuration** | Scattered | Centralized, hierarchical |
-| **Deployment** | Single mode | Daemon + CLI modes |
-
 ## 🏗️ Core Concepts
 
+### Dual Runtime Modes
+
+**🔄 Daemon Mode** - Long-running services:
+```go
+runtime.StartDaemon(runtime.WithPlugins(webServerPlugin))
+```
+
+**⚡ Command Mode** - Execute and exit:
+```go
+result, err := runtime.ExecuteCommand("calculate", inputData,
+    runtime.WithPlugins(calculatorPlugin))
+```
+
 ### Component System
-Everything is a **Component** with unified lifecycle management:
+Everything is a **Component** with unified lifecycle:
 
 ```go
 type Component interface {
-    // Identity methods
     ID() ComponentID
     Name() string
-    Description() string
-    Version() string
-    
-    // Component-specific methods
-    Type() ComponentType
-    Metadata() Metadata
     Initialize(ctx context.Context, system System) error
     Dispose() error
 }
 ```
 
 **Three Component Types:**
-- **Components**: Basic entities (database connections, config loaders)
-- **Operations**: Executable tasks with input/output (calculations, transformations)
-- **Services**: Long-running processes (web servers, message processors)
-
-### Dual Runtime Modes
-
-**🔄 Daemon Mode** - Long-running services:
-```go
-fx.StartDaemon(fx.WithPlugins(&WebServerPlugin{}))
-```
-
-**⚡ Command Mode** - CLI tools and batch processing:
-```go
-result, err := fx.ExecuteCommand("process-data", inputData,
-    fx.WithPlugins(&ProcessorPlugin{}))
-```
+- **Services**: Long-running processes (web servers, workers)
+- **Operations**: Stateless tasks (calculations, transformations)
+- **Components**: Basic entities (database connections, config)
 
 ### Plugin Architecture
-Extend functionality through focused, testable plugins:
+Plugins orchestrate components and provide functionality:
 
 ```go
-type CalculatorPlugin struct {
+type MyPlugin struct {
     *component.BaseService
+    runtime runtime.RuntimeEnvironment
 }
 
-func (p *CalculatorPlugin) Initialize(ctx context.Context, system component.System) error {
+func (p *MyPlugin) Initialize(ctx context.Context, system component.System) error {
+    p.runtime = system.(runtime.RuntimeEnvironment)
     registry := system.Registry()
-    return registry.Register(&AddOperation{})
+    return registry.Register(myService, myOperation)
 }
 ```
 
 ## 📋 Usage Examples
 
-### Web Service Application
+### Web Service
 ```go
 func main() {
-    fx.StartDaemon(
-        fx.WithPlugins(
-            &ConfigPlugin{},
-            &DatabasePlugin{URL: "postgres://localhost/myapp"},
-            &WebServerPlugin{Port: 8080},
-            &MetricsPlugin{},
+    runtime.StartDaemon(
+        runtime.WithPlugins(
+            webserver.NewPlugin(8080),
+            database.NewPlugin("postgres://localhost/myapp"),
         ),
     )
 }
@@ -143,13 +125,13 @@ func main() {
 ### CLI Tool
 ```go
 func main() {
-    operation := os.Args[1]
-    input := parseArgs(os.Args[2:])
-    
-    result, err := fx.ExecuteCommand(operation, input,
-        fx.WithPlugins(&DataProcessorPlugin{}),
+    result, err := runtime.ExecuteCommand("process-file", 
+        map[string]interface{}{
+            "input": os.Args[1],
+            "format": "json",
+        },
+        runtime.WithPlugins(processor.NewPlugin()),
     )
-    
     fmt.Printf("Result: %v\n", result)
 }
 ```
@@ -157,9 +139,10 @@ func main() {
 ### Testing
 ```go
 func TestCalculator(t *testing.T) {
-    result, err := fx.ExecuteCommand("add", map[string]any{
-        "a": 5, "b": 3,
-    }, fx.WithPlugins(&CalculatorPlugin{}))
+    result, err := runtime.ExecuteCommand("add", 
+        map[string]interface{}{"a": 5, "b": 3},
+        runtime.WithPlugins(calculator.NewPlugin()),
+    )
     
     require.NoError(t, err)
     assert.Equal(t, 8.0, result["result"])
@@ -168,7 +151,7 @@ func TestCalculator(t *testing.T) {
 
 ## 🏛️ Architecture
 
-Built on **Domain-Driven Design** and **Clean Architecture** principles:
+Built on **Domain-Driven Design** and **Clean Architecture**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -176,7 +159,7 @@ Built on **Domain-Driven Design** and **Clean Architecture** principles:
 ├─────────────────────────────────────────────────────────────┤
 │                  Public API (pkg/)                         │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────────────┐   │
-│  │   fx/   │ │runtime/ │ │component│ │    plugin/      │   │
+│  │runtime/ │ │component│ │ plugin/ │ │    config/      │   │
 │  └─────────┘ └─────────┘ └─────────┘ └─────────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
 │                Infrastructure Layer                        │
@@ -192,26 +175,57 @@ Built on **Domain-Driven Design** and **Clean Architecture** principles:
 **Key Principles:**
 - **Domain Independence**: Business logic doesn't depend on infrastructure
 - **Dependency Inversion**: Infrastructure implements domain interfaces
-- **Single Responsibility**: Each component has one clear purpose
-- **Testability**: Easy mocking through interface-based design
+- **Automatic DI**: Uber FX handles dependency injection
+- **Plugin-Based**: Extend functionality through focused plugins
 
-## 📚 Documentation
+## 📦 Package Structure
 
-### 🎓 Getting Started
-- **[Public API Guide](pkg/README.md)** - Complete API reference and usage patterns
-- **[Examples](examples/README.md)** - Traditional vs Modern approaches with working code
-- **[FX Integration Guide](pkg/fx/README.md)** - Deep dive into dependency injection
+```
+pkg/                    # Public API
+├── runtime/           # Application runtime and lifecycle
+├── component/         # Component system abstractions
+├── plugin/           # Plugin system interfaces
+├── config/           # Configuration management
+├── event/            # Event system
+└── context/          # Application context
 
-### 🏗️ Architecture & Development
-- **[Domain Layer Guide](internal/domain/README.md)** - DDD principles and interfaces
-- **[Testing Framework](test/unit/README.md)** - Comprehensive testing patterns and mocks
+internal/             # Framework implementation
+├── domain/          # Domain interfaces and business logic
+├── infrastructure/  # Concrete implementations
+└── plugins/         # Built-in plugins
 
-### 🔌 Advanced Topics
-- **[Plugin Development](pkg/plugin/README.md)** - Building and distributing plugins
-- **[Storage Systems](internal/domain/README.md#storage-system)** - Multi-backend storage abstraction
-- **[Event-Driven Architecture](internal/domain/README.md#event-system)** - Pub/sub messaging patterns
+examples/            # Working examples
+└── complete-app/    # Full application example
+```
 
-## 🛠️ Development
+## 🔧 Configuration
+
+### Default (Zero Setup)
+```go
+// Works out of the box with sensible defaults
+runtime.StartDaemon(runtime.WithPlugins(myPlugin))
+```
+
+### Custom Configuration
+```go
+import "go.uber.org/fx"
+
+func createConfig() config.Configuration {
+    return config.NewMemoryConfigurationWithData(map[string]interface{}{
+        "app.port": 8080,
+        "db.host":  "localhost",
+    })
+}
+
+runtime.StartDaemon(
+    runtime.WithPlugins(myPlugin),
+    runtime.WithOptions(
+        fx.Replace(fx.Annotate(createConfig, fx.As(new(config.Configuration)))),
+    ),
+)
+```
+
+## 🧪 Development
 
 ### Prerequisites
 - Go 1.21 or higher
@@ -232,34 +246,35 @@ go test ./...
 # Run with coverage
 go test ./... -cover
 
-# Run specific test suites
-go test ./test/unit/infrastructure/...
-go test ./test/unit/pkg/...
+# Run examples
+go run examples/complete-app/main.go command
 ```
 
-### Project Structure
-```
-├── pkg/                    # Public API
-├── internal/
-│   ├── domain/            # Domain interfaces and business logic
-│   ├── infrastructure/    # Concrete implementations
-│   └── fx/               # FX integration logic
-├── examples/              # Working examples and tutorials
-├── test/                  # Comprehensive test suite
-└── docs/                  # Additional documentation
-```
+## 📚 Documentation
+
+### 🎓 Getting Started
+- **[Runtime Guide](pkg/runtime/README.md)** - Application runtime and modes
+- **[Examples](examples/README.md)** - Working code examples
+
+### 🏗️ Development Guides
+- **[Plugin Development](docs/PLUGIN_DEVELOPMENT_GUIDE.md)** - Building plugins
+- **[Service & Operations](docs/SERVICE_OPERATIONS_DEVELOPMENT_GUIDE.md)** - Component development
+- **[Runtime Development](docs/RUNTIME_DEVELOPMENT_GUIDE.md)** - Application architecture
+
+### 🔧 Advanced Topics
+- **[Domain Layer](internal/domain/README.md)** - DDD principles and interfaces
+- **[Testing Framework](test/unit/README.md)** - Testing patterns and mocks
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
 
-### Quick Contribution Guide
+### Quick Start
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
 3. **Test** your changes (`go test ./...`)
 4. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-5. **Push** to the branch (`git push origin feature/amazing-feature`)
-6. **Open** a Pull Request
+5. **Push** and **open** a Pull Request
 
 ## 📄 License
 
@@ -267,7 +282,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **Documentation**: Start with the [Public API Guide](pkg/README.md)
+- **Documentation**: Start with [Runtime Guide](pkg/runtime/README.md)
 - **Examples**: Check out [working examples](examples/README.md)
 - **Issues**: [GitHub Issues](https://github.com/fintechain/skeleton/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/fintechain/skeleton/discussions)

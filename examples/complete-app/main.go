@@ -1,5 +1,5 @@
 // Package main demonstrates a complete application using the Fintechain Skeleton framework
-// with multiple plugins working together.
+// showcasing plugins, custom providers, and all framework patterns.
 package main
 
 import (
@@ -7,18 +7,23 @@ import (
 	"log"
 	"os"
 
-	"github.com/fintechain/skeleton/examples/plugins/database"
-	"github.com/fintechain/skeleton/examples/plugins/webserver"
-	"github.com/fintechain/skeleton/pkg/fx"
+	"github.com/fintechain/skeleton/examples/complete-app/modes"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Complete Application Example - Fintechain Skeleton Framework")
+		fmt.Println("Complete Framework Example - Fintechain Skeleton Framework")
+		fmt.Println()
+		fmt.Println("This example demonstrates:")
+		fmt.Println("  • Plugin orchestration (webserver + database)")
+		fmt.Println("  • Custom providers (logger, config, eventbus)")
+		fmt.Println("  • Component lifecycle management")
+		fmt.Println("  • Both daemon and command modes")
 		fmt.Println()
 		fmt.Println("Usage:")
 		fmt.Println("  go run examples/complete-app/main.go daemon     # Run as daemon (long-running services)")
 		fmt.Println("  go run examples/complete-app/main.go command    # Run in command mode (execute and exit)")
+		fmt.Println("  go run examples/complete-app/main.go custom     # Run with custom providers")
 		os.Exit(1)
 	}
 
@@ -26,57 +31,19 @@ func main() {
 
 	switch mode {
 	case "daemon":
-		runDaemonMode()
+		if err := modes.RunDaemonMode(); err != nil {
+			log.Fatalf("Daemon mode failed: %v", err)
+		}
 	case "command":
-		runCommandMode()
+		if err := modes.RunCommandMode(); err != nil {
+			log.Fatalf("Command mode failed: %v", err)
+		}
+	case "custom":
+		if err := modes.RunWithCustomProviders(); err != nil {
+			log.Fatalf("Custom providers mode failed: %v", err)
+		}
 	default:
 		fmt.Printf("Unknown mode: %s\n", mode)
 		os.Exit(1)
 	}
-}
-
-// runDaemonMode demonstrates running multiple plugins as long-running services
-func runDaemonMode() {
-	fmt.Println("=== Complete Application - Daemon Mode ===")
-	fmt.Println("Starting multiple plugins with services...")
-
-	// Start daemon with multiple plugins
-	// This demonstrates how multiple plugins work together in daemon mode
-	err := fx.StartDaemon(
-		fx.WithPlugins(
-			webserver.NewWebServerPlugin(8080),
-			database.NewDatabasePlugin("postgres", "test://connection")),
-	)
-
-	if err != nil {
-		log.Fatalf("Application failed to start: %v", err)
-	}
-
-	// Framework handles:
-	// 1. Plugin initialization and component registration
-	// 2. Service startup (HTTPService and DatabaseConnectionService)
-	// 3. Services run continuously until shutdown signal
-	// 4. Graceful shutdown on SIGINT/SIGTERM
-}
-
-// runCommandMode demonstrates executing one operation and exiting
-func runCommandMode() {
-	fmt.Println("=== Complete Application - Command Mode ===")
-
-	// Execute one operation and exit
-	result, err := fx.ExecuteCommand("http-route", map[string]any{
-		"method": "GET",
-		"path":   "/api/health",
-	}, fx.WithPlugins(
-		webserver.NewWebServerPlugin(8080),
-		database.NewDatabasePlugin("postgres", "test://connection")),
-	)
-
-	if err != nil {
-		fmt.Printf("Operation failed: %v\n", err)
-	} else {
-		fmt.Printf("Operation result: %+v\n", result)
-	}
-
-	fmt.Println("Command mode complete - application exits")
 }

@@ -1,187 +1,182 @@
 # Complete Application Example
 
-This example demonstrates a **complete multi-plugin application** using the Fintechain Skeleton framework with both web server and database plugins working together, focusing on **framework patterns**.
+This example demonstrates a complete application using the Fintechain Skeleton framework, showcasing all major framework patterns in a well-organized, self-contained structure.
 
-## 🎯 What This Demonstrates
+## Project Structure
 
-- **Plugin Coordination**: Multiple plugins working in the same application
-- **Framework Patterns**: Component lifecycle, service management, operation execution
-- **Runtime Modes**: Daemon vs command mode for different use cases
-- **Simplified Operations**: Focus on framework usage rather than business complexity
+```
+examples/complete-app/
+├── main.go                 # Entry point and mode selection
+├── modes/                  # Different execution modes
+│   └── modes.go           # Daemon, command, and custom provider modes
+├── providers/             # Custom service implementations
+│   ├── logger.go         # Custom logger implementation
+│   ├── config.go         # Custom configuration implementation
+│   └── eventbus.go       # Custom event bus implementation
+├── plugins/               # Example plugins (self-contained)
+│   ├── database/         # Database plugin with connection and query components
+│   │   ├── plugin.go     # Main plugin orchestrator
+│   │   ├── connection_service.go  # Database connection service
+│   │   ├── query_operation.go     # Query processing operation
+│   │   └── README.md     # Database plugin documentation
+│   └── webserver/        # Web server plugin with HTTP components
+│       ├── plugin.go     # Main plugin orchestrator
+│       ├── http_service.go       # HTTP service implementation
+│       ├── route_operation.go    # Route processing operation
+│       └── README.md     # Web server plugin documentation
+└── README.md             # This file
+```
 
-## 🚀 How to Run
+## What This Example Demonstrates
 
-### 1. Daemon Mode - Long-Running Services
-Starts both web server and database services:
+### 🔌 Plugin Orchestration
+- **Multiple plugins working together**: Webserver + Database plugins
+- **Plugin lifecycle management**: Automatic initialization, startup, and shutdown
+- **Plugin communication**: Through the shared runtime environment
+- **Self-contained plugins**: Each plugin includes all its components
 
+### 🛠️ Custom Providers
+- **Custom Logger**: Structured logging with timestamps and prefixes
+- **Custom Configuration**: In-memory configuration with type-safe access
+- **Custom Event Bus**: Async event publishing with subscription management
+
+### 🔄 Component Lifecycle
+- **Service lifecycle**: Initialize → Start → Stop → Dispose
+- **Status tracking**: Monitor service states (Stopped, Running, etc.)
+- **Graceful shutdown**: Proper cleanup of all resources
+
+### 🚀 Execution Modes
+- **Daemon Mode**: Long-running services (web servers, background workers)
+- **Command Mode**: Execute operations and exit (CLI commands, batch processing)
+- **Custom Providers**: Replace framework services with custom implementations
+
+## Usage
+
+### Daemon Mode (Long-running Services)
 ```bash
 go run examples/complete-app/main.go daemon
 ```
 
-**What happens:**
-- WebServer plugin initializes HTTPService and RouteOperation
-- Database plugin initializes DatabaseConnectionService and QueryOperation
-- Both services start and simulate running (no real servers)
-- Services run until Ctrl+C with graceful shutdown
-- Framework logging shows service lifecycle
+This mode:
+- Starts multiple plugins as long-running services
+- Uses default framework providers
+- Blocks until shutdown signal (SIGINT/SIGTERM)
+- Demonstrates typical server/service applications
 
-### 2. Command Mode - Execute Operation and Exit
-Tests operation execution without starting services:
-
+### Command Mode (Execute and Exit)
 ```bash
 go run examples/complete-app/main.go command
 ```
 
-**What happens:**
-- Both plugins initialize their components
-- RouteOperation executes with sample HTTP route data
-- Simple route processing returns structured output
-- Application exits immediately (no services started)
-- Demonstrates operation execution pattern
+This mode:
+- Executes a specific operation
+- Returns results immediately
+- Exits after completion
+- Demonstrates CLI tools and batch processing
 
-## 🏗️ Architecture
-
-```
-Complete Application
-├── WebServerPlugin (Framework Patterns)
-│   ├── HTTPService (simulated service lifecycle)
-│   └── RouteOperation (simple input/output processing)
-└── DatabasePlugin (Framework Patterns)
-    ├── DatabaseConnectionService (simulated connection lifecycle)
-    └── QueryOperation (simple query processing)
-```
-
-## 💡 Key Learning Points
-
-### Framework Patterns Focus
-- **Runtime Reference Storage**: All components store runtime reference
-- **Plugin Orchestration**: Plugins initialize and register components
-- **Service Lifecycle**: Start/stop management in daemon mode
-- **Operation Processing**: Simple input/output transformation
-
-### Plugin Independence
-- Each plugin can work independently
-- Plugins don't directly depend on each other
-- Framework handles component registration and lifecycle
-
-### Mode Separation
-- **Daemon Mode**: Services start and run continuously (simulated)
-- **Command Mode**: Operations execute and complete immediately
-- Same plugins work in both modes with different behavior
-
-### Component Communication
-- Components access framework services through stored runtime reference
-- Registry used for component discovery
-- Clean separation of concerns
-
-## 🔧 Configuration
-
-The application demonstrates configuration access patterns:
-
-```json
-{
-  "http": {
-    "port": 8080,
-    "host": "0.0.0.0"
-  },
-  "database": {
-    "driver": "postgres",
-    "datasource": "test://connection",
-    "max_connections": 10
-  }
-}
-```
-
-**Configuration Usage Pattern**:
-```go
-// Components access config through runtime reference
-config := component.runtime.Configuration()
-port := config.GetIntDefault("http.port", 8080)
-```
-
-## 📊 Framework Patterns Demonstrated
-
-### 1. Plugin-as-Orchestrator
-```go
-func (p *WebServerPlugin) Initialize(ctx context.Context, system component.System) error {
-    // 1. Initialize components
-    p.httpService.Initialize(ctx, system)
-    p.routeOperation.Initialize(ctx, system)
-    
-    // 2. Register with registry
-    registry := system.Registry()
-    registry.Register(p.httpService)
-    registry.Register(p.routeOperation)
-    
-    return nil
-}
-```
-
-### 2. Runtime Reference Storage
-```go
-func (h *HTTPService) Initialize(ctx context.Context, system component.System) error {
-    // Store runtime reference for framework services access
-    h.runtime = system.(runtime.RuntimeEnvironment)
-    
-    // Access framework services
-    logger := h.runtime.Logger()
-    logger.Info("HTTP Service initialized")
-    
-    return nil
-}
-```
-
-### 3. Service Lifecycle Management
-```go
-func (p *WebServerPlugin) Start(ctx context.Context) error {
-    // Plugin manages service lifecycle
-    return p.httpService.Start(ctx)
-}
-```
-
-## 🎯 Key Simplifications
-
-### What This Example Demonstrates:
-- ✅ **Framework Patterns**: Component lifecycle, plugin orchestration
-- ✅ **Multi-Plugin Coordination**: Multiple plugins working together
-- ✅ **Runtime Modes**: Daemon vs command execution patterns
-- ✅ **Service Management**: Start/stop lifecycle simulation
-- ✅ **Operation Processing**: Simple input/output transformation
-
-### What This Example Avoids:
-- ❌ **Real Infrastructure**: No actual HTTP servers or database connections
-- ❌ **Complex Business Logic**: No real web routing or SQL processing
-- ❌ **External Dependencies**: No web frameworks or database drivers
-- ❌ **Complex Error Handling**: Focus on framework patterns
-- ❌ **Production Concerns**: No real networking or persistence
-
-## 🧪 Testing the Example
-
-### Test Daemon Mode
+### Custom Providers Mode
 ```bash
-go run examples/complete-app/main.go daemon
-# Watch the logs to see:
-# - Plugin initialization
-# - Component registration
-# - Service startup
-# - Graceful shutdown on Ctrl+C
+go run examples/complete-app/main.go custom
 ```
 
-### Test Command Mode
-```bash
-go run examples/complete-app/main.go command
-# Watch the logs to see:
-# - Plugin initialization
-# - Operation execution
-# - Immediate cleanup and exit
+This mode:
+- Uses custom implementations of framework services
+- Shows how to replace logger, config, and event bus
+- Demonstrates advanced FX dependency injection
+- Perfect for specialized requirements
+
+## Key Framework Patterns
+
+### 1. Plugin Development
+```go
+// Plugins implement the plugin.Plugin interface
+type MyPlugin struct {
+    // plugin configuration
+}
+
+func (p *MyPlugin) Initialize(ctx context.Context, system component.System) error {
+    // Setup plugin resources
+}
 ```
 
-## 🎯 Next Steps
+### 2. Custom Service Providers
+```go
+// Custom services implement framework interfaces
+func NewCustomLogger() logging.LoggerService {
+    return &CustomLogger{
+        prefix: "[CUSTOM]",
+        status: component.StatusStopped,
+    }
+}
 
-1. **Run both modes** to see different execution patterns
-2. **Check the plugin code** in `examples/plugins/` to understand implementation
-3. **Copy plugins as templates** for your own applications
-4. **Read the Plugin Development Guide** for advanced patterns
-5. **Focus on framework patterns** when building your own plugins
+// Replace framework services using FX
+runtime.WithOptions(
+    fx.Replace(NewCustomLogger()),
+)
+```
 
-This example serves as a **framework pattern template** showing how multiple plugins coordinate while maintaining clean separation of concerns. 
+### 3. Runtime Modes
+```go
+// Daemon mode - long-running services
+runtime.StartDaemon(
+    runtime.WithPlugins(plugin1, plugin2),
+)
+
+// Command mode - execute and exit
+result, err := runtime.ExecuteCommand("operation-id", input,
+    runtime.WithPlugins(plugin1, plugin2),
+)
+```
+
+## Architecture Benefits
+
+### 🏗️ Clean Separation of Concerns
+- **main.go**: Entry point and mode selection only
+- **modes/**: Execution logic separated by use case
+- **providers/**: Custom implementations in dedicated files
+- **plugins/**: Self-contained plugin implementations
+
+### 🔧 Maintainable Code
+- **Single responsibility**: Each file has one clear purpose
+- **Easy to extend**: Add new modes, providers, or plugins without touching existing code
+- **Clear dependencies**: Import structure shows relationships
+- **Self-contained**: All example code is in one place
+
+### 🧪 Testable Design
+- **Isolated components**: Each provider and plugin can be tested independently
+- **Mockable interfaces**: Framework interfaces enable easy mocking
+- **Clear boundaries**: Separation makes unit testing straightforward
+
+## Plugin Architecture
+
+### Database Plugin
+- **DatabaseConnectionService**: Manages database connections and lifecycle
+- **QueryOperation**: Processes database queries with simple validation
+- **Plugin Orchestrator**: Coordinates components and manages their lifecycle
+
+### Web Server Plugin
+- **HTTPService**: Manages HTTP server functionality and lifecycle
+- **RouteOperation**: Processes HTTP route requests with simple routing
+- **Plugin Orchestrator**: Coordinates components and manages their lifecycle
+
+## Framework Integration
+
+This example showcases the full power of the Fintechain Skeleton framework:
+
+- **FX Dependency Injection**: Automatic wiring of services and plugins
+- **Component Lifecycle**: Managed initialization and cleanup
+- **Plugin Architecture**: Extensible system with clean interfaces
+- **Configuration Management**: Type-safe configuration access
+- **Event-Driven Communication**: Publish-subscribe messaging
+- **Structured Logging**: Consistent logging across all components
+
+## Next Steps
+
+1. **Study the code structure** to understand the organization patterns
+2. **Run different modes** to see various execution patterns
+3. **Examine custom providers** to learn service replacement techniques
+4. **Study the plugin implementations** to understand component orchestration
+5. **Create your own plugins** following the established patterns
+6. **Extend the example** with additional modes, providers, or plugins
+
+This example serves as a comprehensive, self-contained reference for building production-ready applications with the Fintechain Skeleton framework. 
