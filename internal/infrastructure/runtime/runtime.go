@@ -187,24 +187,17 @@ func (r *Runtime) Logger() logging.Logger {
 
 // LoadPlugins loads multiple plugins into the system.
 func (r *Runtime) LoadPlugins(ctx context.Context, plugins []plugin.Plugin) error {
-	// Add and initialize each plugin
+	// Add each plugin to the manager
 	for _, p := range plugins {
 		// Add plugin to manager
 		if err := r.pluginManager.Add(p.ID(), p); err != nil {
 			return fmt.Errorf("failed to add plugin %s: %w", p.ID(), err)
 		}
+	}
 
-		// Initialize plugin with system access
-		if err := p.Initialize(ctx, r); err != nil {
-			return fmt.Errorf("failed to initialize plugin %s: %w", p.ID(), err)
-		}
-
-		// Start plugin if the system is running
-		if r.IsRunning() {
-			if err := p.Start(ctx); err != nil {
-				return fmt.Errorf("failed to start plugin %s: %w", p.ID(), err)
-			}
-		}
+	// Let the plugin manager initialize all added plugins
+	if err := r.pluginManager.Initialize(ctx, r); err != nil {
+		return fmt.Errorf("failed to initialize plugin manager: %w", err)
 	}
 
 	return nil

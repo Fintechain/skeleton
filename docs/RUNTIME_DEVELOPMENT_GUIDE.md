@@ -92,6 +92,79 @@ The runtime supports two fundamental application patterns:
 - **Behavior**: Starts up, executes a specific task, returns result, exits immediately
 - **Use Case**: When your application performs a specific task and then terminates
 
+## 📚 Runtime API Reference
+
+### Core Functions
+
+#### StartDaemon
+```go
+func StartDaemon(opts ...Option) error
+```
+Starts a long-running daemon application that blocks until shutdown (SIGINT/SIGTERM).
+
+#### ExecuteCommand
+```go
+func ExecuteCommand(operationID string, input map[string]interface{}, opts ...Option) (map[string]interface{}, error)
+```
+Executes a specific operation and returns immediately.
+
+**Parameters:**
+- `operationID`: String ID of the registered operation component
+- `input`: Input data map (use `map[string]interface{}{}` for no input)
+- `opts`: Configuration options (plugins, FX options)
+
+**Returns:**
+- `map[string]interface{}`: Operation results
+- `error`: Execution error if any
+
+#### StartDaemonWithSignalHandling
+```go
+func StartDaemonWithSignalHandling(signals []os.Signal, opts ...Option) error
+```
+Starts a daemon with custom signal handling beyond the default SIGINT/SIGTERM.
+
+```go
+import (
+    "os"
+    "syscall"
+)
+
+err := runtime.StartDaemonWithSignalHandling(
+    []os.Signal{syscall.SIGTERM, syscall.SIGHUP}, 
+    runtime.WithPlugins(myPlugin),
+)
+```
+
+### Configuration Types
+
+#### Option and Config
+```go
+type Option func(*Config)
+
+type Config struct {
+    Plugins      []plugin.Plugin
+    ExtraOptions []fx.Option
+}
+```
+
+#### WithPlugins
+```go
+func WithPlugins(plugins ...plugin.Plugin) Option
+```
+Adds plugins to be loaded at startup.
+
+#### WithOptions
+```go
+func WithOptions(options ...fx.Option) Option
+```
+Adds custom FX dependency injection options.
+
+### RuntimeEnvironment Type
+```go
+type RuntimeEnvironment = domainRuntime.RuntimeEnvironment
+```
+Provides access to framework services within components. Available in plugin Initialize methods via `system.(runtime.RuntimeEnvironment)`.
+
 ## 🚀 Building Your First Application
 
 ### Daemon Application Example

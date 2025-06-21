@@ -25,8 +25,13 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/fintechain/skeleton/internal/domain/plugin"
+	domainRuntime "github.com/fintechain/skeleton/internal/domain/runtime"
 	infraRuntime "github.com/fintechain/skeleton/internal/infrastructure/runtime"
 )
+
+// RuntimeEnvironment provides high-level runtime environment interface.
+// This extends the component.System interface with additional accessors for commonly used core services.
+type RuntimeEnvironment = domainRuntime.RuntimeEnvironment
 
 // StartDaemon creates and runs a long-running daemon application.
 // This function blocks until the application receives a shutdown signal.
