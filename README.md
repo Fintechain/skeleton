@@ -2,11 +2,11 @@
 
 > **Modern Go Framework for Domain-Driven Applications**
 
-A production-ready framework built on **Domain-Driven Design** and **Clean Architecture** principles, featuring automatic dependency injection, dual runtime modes, and a powerful plugin system.
+A production-ready framework built on **Domain-Driven Design** and **Clean Architecture** principles, featuring a clean Builder API, dual runtime modes, and a powerful plugin system.
 
-[![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue.svg)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/go-%3E%3D1.24-blue.svg)](https://golang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-orange.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-orange.svg)](CHANGELOG.md)
 
 ## 🚀 Quick Start
 
@@ -16,16 +16,17 @@ Get a service running in 30 seconds:
 package main
 
 import (
+    "log"
     "github.com/fintechain/skeleton/pkg/runtime"
 )
 
 func main() {
     // Start a long-running daemon
-    err := runtime.StartDaemon(
-        runtime.WithPlugins(myPlugin),
-    )
+    err := runtime.NewBuilder().
+        WithPlugins(myPlugin).
+        BuildDaemon()
     if err != nil {
-        panic(err)
+        log.Fatal(err)
     }
 }
 ```
@@ -33,7 +34,7 @@ func main() {
 **Installation:**
 ```bash
 go mod init myapp
-go get github.com/fintechain/skeleton
+go get github.com/fintechain/skeleton@v0.4.0
 ```
 
 ## 🎯 Why Skeleton Framework?
@@ -54,25 +55,45 @@ db := newDatabase(config, logger)
 server := newWebServer(config, db, logger)
 // ... 50+ lines of manual setup
 
-// After: Declarative, automatic
-runtime.StartDaemon(
-    runtime.WithPlugins(webPlugin, dbPlugin),
-)
+// After: Clean Builder API
+runtime.NewBuilder().
+    WithPlugins(webPlugin, dbPlugin).
+    BuildDaemon()
 ```
 
 ## 🏗️ Core Concepts
+
+### Builder Pattern API
+
+**Simple and Intuitive:**
+```go
+// Build a daemon application
+runtime.NewBuilder().
+    WithPlugins(plugin1, plugin2).
+    WithConfig(customConfig).
+    WithLogger(customLogger).
+    BuildDaemon()
+
+// Build a command application
+result, err := runtime.NewBuilder().
+    WithPlugins(plugin1, plugin2).
+    BuildCommand("operation-id", inputData)
+```
 
 ### Dual Runtime Modes
 
 **🔄 Daemon Mode** - Long-running services:
 ```go
-runtime.StartDaemon(runtime.WithPlugins(webServerPlugin))
+runtime.NewBuilder().
+    WithPlugins(webServerPlugin).
+    BuildDaemon()
 ```
 
 **⚡ Command Mode** - Execute and exit:
 ```go
-result, err := runtime.ExecuteCommand("calculate", inputData,
-    runtime.WithPlugins(calculatorPlugin))
+result, err := runtime.NewBuilder().
+    WithPlugins(calculatorPlugin).
+    BuildCommand("calculate", inputData)
 ```
 
 ### Component System
@@ -113,39 +134,75 @@ func (p *MyPlugin) Initialize(ctx context.Context, system component.System) erro
 ### Web Service
 ```go
 func main() {
-    runtime.StartDaemon(
-        runtime.WithPlugins(
+    err := runtime.NewBuilder().
+        WithPlugins(
             webserver.NewPlugin(8080),
             database.NewPlugin("postgres://localhost/myapp"),
-        ),
-    )
+        ).
+        BuildDaemon()
+    if err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
 ### CLI Tool
 ```go
 func main() {
-    result, err := runtime.ExecuteCommand("process-file", 
-        map[string]interface{}{
-            "input": os.Args[1],
+    if len(os.Args) < 2 {
+        log.Fatal("Usage: app <input-file>")
+    }
+    
+    result, err := runtime.NewBuilder().
+        WithPlugins(processor.NewPlugin()).
+        BuildCommand("process-file", map[string]interface{}{
+            "input":  os.Args[1],
             "format": "json",
-        },
-        runtime.WithPlugins(processor.NewPlugin()),
-    )
-    fmt.Printf("Result: %v\n", result)
+        })
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Printf("Processed %d records\n", result["count"])
 }
 ```
 
 ### Testing
 ```go
 func TestCalculator(t *testing.T) {
-    result, err := runtime.ExecuteCommand("add", 
-        map[string]interface{}{"a": 5, "b": 3},
-        runtime.WithPlugins(calculator.NewPlugin()),
-    )
+    result, err := runtime.NewBuilder().
+        WithPlugins(calculator.NewPlugin()).
+        BuildCommand("add", map[string]interface{}{
+            "a": 5, 
+            "b": 3,
+        })
     
     require.NoError(t, err)
     assert.Equal(t, 8.0, result["result"])
+}
+```
+
+### Custom Configuration
+```go
+func createAppConfig() config.Configuration {
+    settings := map[string]interface{}{
+        "app.name":        "My Application",
+        "app.port":        8080,
+        "database.host":   "localhost",
+        "database.port":   5432,
+        "log.level":       "info",
+    }
+    return infraConfig.NewMemoryConfigurationWithData(settings)
+}
+
+func main() {
+    err := runtime.NewBuilder().
+        WithPlugins(myWebPlugin, myDatabasePlugin).
+        WithConfig(createAppConfig()).
+        BuildDaemon()
+    if err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
@@ -175,14 +232,14 @@ Built on **Domain-Driven Design** and **Clean Architecture**:
 **Key Principles:**
 - **Domain Independence**: Business logic doesn't depend on infrastructure
 - **Dependency Inversion**: Infrastructure implements domain interfaces
-- **Automatic DI**: Uber FX handles dependency injection
+- **Builder Pattern**: Clean, fluent API for application construction
 - **Plugin-Based**: Extend functionality through focused plugins
 
 ## 📦 Package Structure
 
 ```
 pkg/                    # Public API
-├── runtime/           # Application runtime and lifecycle
+├── runtime/           # Application runtime and Builder API
 ├── component/         # Component system abstractions
 ├── plugin/           # Plugin system interfaces
 ├── config/           # Configuration management
@@ -203,32 +260,67 @@ examples/            # Working examples
 ### Default (Zero Setup)
 ```go
 // Works out of the box with sensible defaults
-runtime.StartDaemon(runtime.WithPlugins(myPlugin))
+runtime.NewBuilder().
+    WithPlugins(myPlugin).
+    BuildDaemon()
 ```
 
 ### Custom Configuration
 ```go
-import "go.uber.org/fx"
+import (
+    "github.com/fintechain/skeleton/internal/domain/config"
+    infraConfig "github.com/fintechain/skeleton/internal/infrastructure/config"
+)
 
 func createConfig() config.Configuration {
-    return config.NewMemoryConfigurationWithData(map[string]interface{}{
+    return infraConfig.NewMemoryConfigurationWithData(map[string]interface{}{
         "app.port": 8080,
         "db.host":  "localhost",
     })
 }
 
-runtime.StartDaemon(
-    runtime.WithPlugins(myPlugin),
-    runtime.WithOptions(
-        fx.Replace(fx.Annotate(createConfig, fx.As(new(config.Configuration)))),
-    ),
-)
+runtime.NewBuilder().
+    WithPlugins(myPlugin).
+    WithConfig(createConfig()).
+    BuildDaemon()
 ```
+
+### Advanced Customization
+```go
+// Custom logger, event bus, and configuration
+customConfig := infraConfig.NewMemoryConfigurationWithData(settings)
+customLogger := infraLogging.NewConsoleLogger()
+customEventBus := infraEvent.NewInMemoryEventBus()
+
+runtime.NewBuilder().
+    WithPlugins(myPlugin).
+    WithConfig(customConfig).
+    WithLogger(customLogger).
+    WithEventBus(customEventBus).
+    BuildDaemon()
+```
+
+## 🚀 What's New in v0.4.0
+
+### ✅ **NEW: Builder Pattern API**
+- Clean, fluent API: `runtime.NewBuilder().WithPlugins().BuildDaemon()`
+- Custom dependency injection: `WithConfig()`, `WithLogger()`, `WithEventBus()`
+- Simplified application construction
+
+### ❌ **REMOVED: FX Dependency Injection**
+- Eliminated complex FX dependency wiring
+- Removed `runtime.StartDaemon()` and `runtime.ExecuteCommand()` legacy functions
+- Cleaner, more predictable dependency management
+
+### 🔧 **IMPROVED: Developer Experience**
+- Simpler API with better error messages
+- Faster startup times without FX overhead
+- More intuitive component lifecycle management
 
 ## 🧪 Development
 
 ### Prerequisites
-- Go 1.21 or higher
+- Go 1.24 or higher
 - Git
 
 ### Setup
@@ -247,19 +339,20 @@ go test ./...
 go test ./... -cover
 
 # Run examples
-go run examples/complete-app/main.go command
+go run examples/complete-app/main.go daemon
+go run examples/complete-app/main.go command calculate
 ```
 
 ## 📚 Documentation
 
 ### 🎓 Getting Started
-- **[Runtime Guide](pkg/runtime/README.md)** - Application runtime and modes
+- **[Runtime Development Guide](docs/RUNTIME_DEVELOPMENT_GUIDE.md)** - Application runtime and Builder API
 - **[Examples](examples/README.md)** - Working code examples
 
 ### 🏗️ Development Guides
-- **[Plugin Development](docs/PLUGIN_DEVELOPMENT_GUIDE.md)** - Building plugins
-- **[Service & Operations](docs/SERVICE_OPERATIONS_DEVELOPMENT_GUIDE.md)** - Component development
-- **[Runtime Development](docs/RUNTIME_DEVELOPMENT_GUIDE.md)** - Application architecture
+- **[Plugin Development Guide](docs/PLUGIN_DEVELOPMENT_GUIDE.md)** - Building plugins
+- **[Service & Operations Guide](docs/SERVICE_OPERATIONS_DEVELOPMENT_GUIDE.md)** - Component development
+- **[System API Reference](docs/SYSTEM_API_REFERENCE.md)** - Complete API documentation
 
 ### 🔧 Advanced Topics
 - **[Domain Layer](internal/domain/README.md)** - DDD principles and interfaces
@@ -282,7 +375,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **Documentation**: Start with [Runtime Guide](pkg/runtime/README.md)
+- **Documentation**: Start with [Runtime Development Guide](docs/RUNTIME_DEVELOPMENT_GUIDE.md)
 - **Examples**: Check out [working examples](examples/README.md)
 - **Issues**: [GitHub Issues](https://github.com/fintechain/skeleton/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/fintechain/skeleton/discussions)
