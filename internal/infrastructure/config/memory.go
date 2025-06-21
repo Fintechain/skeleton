@@ -29,9 +29,9 @@ func NewMemorySource() *MemorySource {
 func NewMemorySourceWithData(data map[string]interface{}) *MemorySource {
 	source := NewMemorySource()
 	if data != nil {
-		// Deep copy to prevent external modification
+		// Use SetValue to properly handle dot notation keys
 		for k, v := range data {
-			source.data[k] = v
+			source.SetValue(k, v)
 		}
 	}
 	return source

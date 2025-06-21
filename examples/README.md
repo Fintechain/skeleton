@@ -1,6 +1,6 @@
 # Fintechain Skeleton Framework Examples
 
-This directory contains practical examples demonstrating how to build applications with the Fintechain Skeleton framework.
+This directory contains practical examples demonstrating how to build applications with the Fintechain Skeleton framework using the modern **Builder API**.
 
 ## 🚀 Quick Start
 
@@ -10,6 +10,28 @@ go run examples/complete-app/main.go command
 ```
 
 ## 📁 What's Included
+
+### `builder-app/` - Builder API Examples
+
+Focused examples demonstrating the new Builder API for simple, explicit dependency injection.
+
+**Features:**
+- Builder API patterns
+- Custom dependency injection
+- Daemon and command modes
+- Simple, debuggable code
+
+**Usage:**
+```bash
+# Daemon mode - long-running services
+go run examples/builder-app/main.go daemon
+
+# Command mode - execute operation and exit
+go run examples/builder-app/main.go command
+
+# Custom dependencies mode
+go run examples/builder-app/main.go custom
+```
 
 ### `complete-app/` - Complete Application Example
 
@@ -88,20 +110,31 @@ func (o *MyOperation) Execute(ctx context.Context, input component.Input) (compo
 
 ### Daemon Mode (Long-running services)
 ```go
-err := runtime.StartDaemon(
-    runtime.WithPlugins(myPlugin1, myPlugin2),
-)
+err := runtime.NewBuilder().
+    WithPlugins(myPlugin1, myPlugin2).
+    BuildDaemon()
 ```
 
 ### Command Mode (Execute and exit)
 ```go
-result, err := runtime.ExecuteCommand("operation-id", inputData,
-    runtime.WithPlugins(myPlugin1, myPlugin2),
-)
+result, err := runtime.NewBuilder().
+    WithPlugins(myPlugin1, myPlugin2).
+    BuildCommand("operation-id", inputData)
+```
+
+### Custom Dependencies
+```go
+err := runtime.NewBuilder().
+    WithPlugins(myPlugin).
+    WithConfig(customConfig).
+    WithLogger(customLogger).
+    WithEventBus(customEventBus).
+    BuildDaemon()
 ```
 
 ## 🎯 Best Practices
 
+- **Use Builder API** for new applications
 - Store `runtime.RuntimeEnvironment` reference in components
 - Use `runtime.Logger()`, `runtime.Configuration()` for framework services
 - Keep operations simple and focused
@@ -110,12 +143,13 @@ result, err := runtime.ExecuteCommand("operation-id", inputData,
 
 ## 📖 Next Steps
 
-- Explore `complete-app/` to understand the framework
-- Read the [Plugin Development Guide](../docs/development/PLUGIN_DEVELOPMENT_GUIDE.md)
-- Check the [Domain Architecture Guide](../internal/domain/README.md)
+- Start with `builder-app/` to learn the Builder API
+- Explore `complete-app/` to understand complex plugin interactions
+- Read the [Plugin Development Guide](../docs/PLUGIN_DEVELOPMENT_GUIDE.md)
+- Check the [Runtime Development Guide](../docs/RUNTIME_DEVELOPMENT_GUIDE.md)
 
 ---
 
 **Framework Version**: v1.0.0  
 **Documentation Updated**: 2024  
-**Focus**: FX-based runtime with framework patterns 
+**Focus**: Builder API with simple, explicit dependency injection 

@@ -1,10 +1,10 @@
 # Runtime Package
 
-Modern dependency injection for the Fintechain Skeleton Framework using **Uber's FX** framework.
+Modern, simple runtime management for the Fintechain Skeleton Framework using the **Builder API**.
 
-## 🎯 Why FX?
+## 🎯 Why Builder API?
 
-FX provides **automatic dependency injection** and **lifecycle management**, eliminating manual service wiring and reducing boilerplate code.
+The Builder API provides **simple, explicit dependency injection** and **lifecycle management**, eliminating complex framework knowledge and reducing debugging complexity.
 
 ### Before (Manual Setup)
 ```go
@@ -30,28 +30,28 @@ defer runtime.Stop(ctx)
 // Manual error handling for each step
 ```
 
-### After (Automatic with FX)
+### After (Builder API)
 ```go
-// Automatic dependency injection and lifecycle management
+// Simple, explicit dependency injection and lifecycle management
 import "github.com/fintechain/skeleton/pkg/runtime"
 
-runtime.StartDaemon(
-    runtime.WithPlugins(webPlugin, dbPlugin),
-)
+runtime.NewBuilder().
+    WithPlugins(webPlugin, dbPlugin).
+    BuildDaemon()
 ```
 
-## 🏗️ How FX Works
+## 🏗️ How Builder API Works
 
-FX creates and manages the framework runtime automatically:
+The Builder API creates and manages the framework runtime with explicit control:
 
 ```
 Your Code:
-runtime.StartDaemon(runtime.WithPlugins(myPlugin))
+runtime.NewBuilder().WithPlugins(myPlugin).BuildDaemon()
     ↓
-FX CoreModule:
-├── Configuration (memory-based default)
-├── Logger (structured logging)
-├── EventBus (pub/sub events)
+Builder Creates:
+├── Configuration (memory-based default or custom)
+├── Logger (structured logging or custom)
+├── EventBus (pub/sub events or custom)
 ├── Registry (component management)
 ├── PluginManager (plugin lifecycle)
 └── Runtime (orchestrates everything)
@@ -73,12 +73,12 @@ Lifecycle Management:
 import "github.com/fintechain/skeleton/pkg/runtime"
 
 func main() {
-    err := runtime.StartDaemon(
-        runtime.WithPlugins(
+    err := runtime.NewBuilder().
+        WithPlugins(
             webserver.NewWebServerPlugin(8080),
             database.NewDatabasePlugin("postgres", "connection-string"),
-        ),
-    )
+        ).
+        BuildDaemon()
     if err != nil {
         log.Fatal("Failed to start daemon:", err)
     }
@@ -99,15 +99,14 @@ func main() {
 import "github.com/fintechain/skeleton/pkg/runtime"
 
 func main() {
-    result, err := runtime.ExecuteCommand("database-query", 
-        map[string]interface{}{
+    result, err := runtime.NewBuilder().
+        WithPlugins(
+            database.NewDatabasePlugin("postgres", "connection-string"),
+        ).
+        BuildCommand("database-query", map[string]interface{}{
             "query": "SELECT * FROM users WHERE active = true",
             "limit": 100,
-        },
-        runtime.WithPlugins(
-            database.NewDatabasePlugin("postgres", "connection-string"),
-        ),
-    )
+        })
     if err != nil {
         log.Fatal("Command failed:", err)
     }
@@ -123,7 +122,6 @@ func main() {
 
 **Key Difference**: Command mode skips service startup for faster execution.
 
-
 ## 🔧 Configuration
 
 ### Default Configuration (Zero Setup)
@@ -132,16 +130,15 @@ The runtime automatically provides a default memory-based configuration:
 
 ```go
 // This works with zero configuration
-runtime.StartDaemon(runtime.WithPlugins(myPlugin))
+runtime.NewBuilder().WithPlugins(myPlugin).BuildDaemon()
 ```
 
 ### Custom Configuration
 
-You can provide your own configuration implementation using FX options:
+You can provide your own configuration implementation using the Builder API:
 
 ```go
 import (
-    "go.uber.org/fx"
     "github.com/fintechain/skeleton/pkg/runtime"
     "github.com/fintechain/skeleton/internal/domain/config"
     infraConfig "github.com/fintechain/skeleton/internal/infrastructure/config"
@@ -158,87 +155,64 @@ func createCustomConfig() config.Configuration {
     return infraConfig.NewMemoryConfigurationWithData(data)
 }
 
-runtime.StartDaemon(
-    runtime.WithPlugins(myPlugin),
-    runtime.WithOptions(
-        fx.Replace(fx.Annotate(createCustomConfig, fx.As(new(config.Configuration)))),
-    ),
-)
+runtime.NewBuilder().
+    WithPlugins(myPlugin).
+    WithConfig(createCustomConfig()).
+    BuildDaemon()
 ```
 
 ## 🔧 Advanced Usage
 
-### WithOptions - Escape Hatch
+### Custom Dependencies
 
-Use `WithOptions` to customize the FX dependency injection container:
-
-```go
-import (
-    "go.uber.org/fx"
-    "github.com/fintechain/skeleton/pkg/runtime"
-)
-
-runtime.StartDaemon(
-    runtime.WithPlugins(myPlugin),
-    runtime.WithOptions(
-        // Override framework services
-        fx.Replace(fx.Annotate(myCustomLogger, fx.As(new(logging.LoggerService)))),
-        
-        // Add custom providers
-        fx.Provide(func() *MyExternalService {
-            return &MyExternalService{APIKey: os.Getenv("API_KEY")}
-        }),
-        
-        // Add lifecycle hooks
-        fx.Invoke(func(lc fx.Lifecycle, service *MyExternalService) {
-            lc.Append(fx.Hook{
-                OnStart: func(ctx context.Context) error {
-                    return service.Connect()
-                },
-                OnStop: func(ctx context.Context) error {
-                    return service.Disconnect()
-                },
-            })
-        }),
-    ),
-)
-```
-
-### Custom Signal Handling
+Use the Builder API to inject custom dependencies:
 
 ```go
 import (
-    "os"
-    "syscall"
     "github.com/fintechain/skeleton/pkg/runtime"
+    "github.com/fintechain/skeleton/internal/domain/config"
+    "github.com/fintechain/skeleton/internal/domain/logging"
+    "github.com/fintechain/skeleton/internal/domain/event"
+    infraConfig "github.com/fintechain/skeleton/internal/infrastructure/config"
+    infraLogging "github.com/fintechain/skeleton/internal/infrastructure/logging"
+    infraEvent "github.com/fintechain/skeleton/internal/infrastructure/event"
 )
 
-runtime.StartDaemonWithSignalHandling(
-    []os.Signal{syscall.SIGTERM, syscall.SIGUSR1},
-    runtime.WithPlugins(myPlugin),
-)
+runtime.NewBuilder().
+    WithPlugins(myPlugin).
+    // Custom configuration
+    WithConfig(infraConfig.NewMemoryConfigurationWithData(map[string]interface{}{
+        "app.name": "Custom App",
+        "log.level": "debug",
+    })).
+    // Custom logger
+    WithLogger(infraLogging.NewConsoleLogger()).
+    // Custom event bus
+    WithEventBus(infraEvent.NewInMemoryEventBus()).
+    BuildDaemon()
 ```
 
-## 🔀 Custom Providers
+## 🔀 Custom Dependencies
 
-Replace any framework service with your custom implementation using FX dependency injection.
+Replace any framework service with your custom implementation using the Builder API.
 
 ### Basic Pattern
 
 ```go
-runtime.StartDaemon(
-    runtime.WithPlugins(myPlugin),
-    runtime.WithOptions(
-        // Replace framework services
-        fx.Replace(fx.Annotate(myCustomLogger, fx.As(new(logging.LoggerService)))),
-        fx.Replace(fx.Annotate(myCustomConfig, fx.As(new(config.Configuration)))),
-        fx.Replace(fx.Annotate(myCustomEventBus, fx.As(new(event.EventBusService)))),
-        
-        // Add external services
-        fx.Provide(createDatabaseConnection),
-        fx.Provide(createAPIClient),
-    ),
-)
+// Create custom dependencies
+customConfig := infraConfig.NewMemoryConfigurationWithData(map[string]interface{}{
+    "app.name": "Custom App",
+})
+customLogger := infraLogging.NewConsoleLogger()
+customEventBus := infraEvent.NewInMemoryEventBus()
+
+runtime.NewBuilder().
+    WithPlugins(myPlugin).
+    // Replace framework services
+    WithConfig(customConfig).
+    WithLogger(customLogger).
+    WithEventBus(customEventBus).
+    BuildDaemon()
 ```
 
 ### Replaceable Services
@@ -246,8 +220,6 @@ runtime.StartDaemon(
 - **Logger** - `logging.LoggerService` interface
 - **Configuration** - `config.Configuration` interface  
 - **EventBus** - `event.EventBusService` interface
-- **Registry** - `component.Registry` interface
-- **PluginManager** - `plugin.PluginManager` interface
 
 ## 🧪 Testing
 
@@ -272,16 +244,13 @@ func TestMyOperation(t *testing.T) {
     })
     
     // Test operation execution
-    result, err := runtime.ExecuteCommand("my-operation", 
-        map[string]interface{}{
+    result, err := runtime.NewBuilder().
+        WithPlugins(NewMyPlugin()).
+        WithConfig(testConfig).
+        BuildCommand("my-operation", map[string]interface{}{
             "name":  "test",
             "value": 10.0,
-        },
-        runtime.WithPlugins(NewMyPlugin()),
-        runtime.WithOptions(
-            fx.Replace(fx.Annotate(func() config.Configuration { return testConfig }, fx.As(new(config.Configuration)))),
-        ),
-    )
+        })
     
     require.NoError(t, err)
     assert.Equal(t, 20.0, result["processed_value"])
@@ -292,10 +261,12 @@ func TestMyOperation(t *testing.T) {
 
 ```go
 func TestMyOperationSimple(t *testing.T) {
-    result, err := runtime.ExecuteCommand("my-operation", map[string]interface{}{
-        "name":  "test",
-        "value": 10.0,
-    }, runtime.WithPlugins(NewMyPlugin()))
+    result, err := runtime.NewBuilder().
+        WithPlugins(NewMyPlugin()).
+        BuildCommand("my-operation", map[string]interface{}{
+            "name":  "test",
+            "value": 10.0,
+        })
     
     require.NoError(t, err)
     assert.Equal(t, 20.0, result["processed_value"])
@@ -306,16 +277,24 @@ func TestMyOperationSimple(t *testing.T) {
 
 ### ✅ Do
 
-1. **Store runtime reference** in all components
-2. **Use BaseService/BaseOperation** embedding
-3. **Access framework services** through runtime reference  
-4. **Keep operations simple** - focus on input/output transformation
-5. **Use memory configuration** for testing with custom data
-6. **Handle configuration** with defaults
+1. **Use Builder API** for new applications
+2. **Store runtime reference** in all components
+3. **Use BaseService/BaseOperation** embedding
+4. **Access framework services** through runtime reference  
+5. **Keep operations simple** - focus on input/output transformation
+6. **Use memory configuration** for testing with custom data
+7. **Handle configuration** with defaults
 
 ### ❌ Don't
 
-1. **Access system directly** - always use runtime reference
-2. **Skip runtime reference storage** - it's required for framework services
-3. **Complicate operations** - keep them simple and focused
-4. **Import wrong packages** - use `pkg/runtime`, not `fx`
+1. **Use legacy API** for new projects - prefer Builder API
+2. **Access system directly** - always use runtime reference
+3. **Skip runtime reference storage** - it's required for framework services
+4. **Complicate operations** - keep them simple and focused
+5. **Mix Builder and legacy APIs** - choose one approach
+
+---
+
+**Framework Version**: v1.0.0  
+**Documentation Updated**: 2024  
+**Need Help?** Check the examples or open an issue on GitHub

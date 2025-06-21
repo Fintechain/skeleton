@@ -66,9 +66,9 @@ Demonstrates plugin-as-orchestrator pattern.
 
 ```go
 func main() {
-    err := fx.StartDaemon(
-        fx.WithPlugins(database.NewDatabasePlugin("postgres", "test://connection")),
-    )
+    err := runtime.NewBuilder().
+        WithPlugins(database.NewDatabasePlugin("postgres", "test://connection")).
+        BuildDaemon()
     if err != nil {
         log.Fatal(err)
     }
@@ -86,10 +86,12 @@ func main() {
 
 ```go
 func main() {
-    result, err := fx.ExecuteCommand("database-query", map[string]interface{}{
-        "type": "validate",
-        "sql":  "SELECT id, name FROM users",
-    }, fx.WithPlugins(database.NewDatabasePlugin("postgres", "test://connection")))
+    result, err := runtime.NewBuilder().
+        WithPlugins(database.NewDatabasePlugin("postgres", "test://connection")).
+        BuildCommand("database-query", map[string]interface{}{
+            "type": "validate",
+            "sql":  "SELECT id, name FROM users",
+        })
     
     if err != nil {
         log.Fatal(err)
@@ -220,10 +222,12 @@ func TestDatabaseConnectionService(t *testing.T) {
 ### Operation Testing
 ```go
 func TestQueryOperation(t *testing.T) {
-    result, err := fx.ExecuteCommand("database-query", map[string]interface{}{
-        "type": "validate",
-        "sql":  "SELECT id FROM users",
-    }, fx.WithPlugins(database.NewDatabasePlugin("postgres", "test://connection")))
+    result, err := runtime.NewBuilder().
+        WithPlugins(database.NewDatabasePlugin("postgres", "test://connection")).
+        BuildCommand("database-query", map[string]interface{}{
+            "type": "validate",
+            "sql":  "SELECT id FROM users",
+        })
     
     require.NoError(t, err)
     assert.Equal(t, true, result["valid"])

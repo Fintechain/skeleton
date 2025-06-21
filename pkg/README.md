@@ -6,21 +6,21 @@ Welcome to the **Fintechain Skeleton Framework** - a modern, domain-driven appli
 
 Get up and running in under 5 minutes:
 
-### Option 1: Modern FX Integration (Recommended)
+### Option 1: Modern Builder API (Recommended)
 
 ```go
 package main
 
 import (
-    "github.com/fintechain/skeleton/pkg/fx"
+    "github.com/fintechain/skeleton/pkg/runtime"
     "github.com/fintechain/skeleton/pkg/plugin"
 )
 
 func main() {
     // Start a long-running service
-    err := fx.StartDaemon(
-        fx.WithPlugins(myWebServerPlugin, myDatabasePlugin),
-    )
+    err := runtime.NewBuilder().
+        WithPlugins(myWebServerPlugin, myDatabasePlugin).
+        BuildDaemon()
     if err != nil {
         panic(err)
     }
@@ -61,34 +61,35 @@ The public API is organized into focused packages that abstract away infrastruct
 
 ```
 pkg/
-├── fx/          🔥 Modern dependency injection with Uber FX
-├── runtime/     ⚡ Traditional runtime builder and management
+├── runtime/     🔥 Modern Builder API and runtime management
 ├── component/   🏗️ Component system abstractions
 ├── context/     🔄 Application context handling
 ├── event/       📡 Event system integration
 └── plugin/      🔌 Plugin system interfaces
 ```
 
-### 🔥 `pkg/fx` - Modern Dependency Injection
+### 🔥 `pkg/runtime` - Modern Builder API
 
-**Use When**: Building new applications or modernizing existing ones
+**Use When**: Building new applications (recommended approach)
 
 ```go
 // Daemon mode - long-running services
-fx.StartDaemon(fx.WithPlugins(webServer, database))
+runtime.NewBuilder().WithPlugins(webServer, database).BuildDaemon()
 
 // Command mode - execute and exit
-result, err := fx.ExecuteCommand("calculate-total", inputData, 
-    fx.WithPlugins(calculatorPlugin))
+result, err := runtime.NewBuilder().
+    WithPlugins(calculatorPlugin).
+    BuildCommand("calculate-total", inputData)
 ```
 
 **Benefits**:
-- ✅ Automatic dependency injection
+- ✅ Simple, explicit dependency injection
+- ✅ Easy debugging and testing
+- ✅ No complex framework knowledge required
 - ✅ Built-in lifecycle management
-- ✅ Clean separation of concerns
-- ✅ Excellent testing support
+- ✅ Custom dependency support
 
-### ⚡ `pkg/runtime` - Traditional Options Pattern
+### ⚡ Traditional Options Pattern
 
 **Use When**: Migrating existing code or need explicit control
 
@@ -116,9 +117,9 @@ For **long-running applications** that provide continuous services:
 
 ```go
 // Web servers, message processors, monitoring services
-err := fx.StartDaemon(
-    fx.WithPlugins(webServerPlugin, messageProcessorPlugin),
-)
+err := runtime.NewBuilder().
+    WithPlugins(webServerPlugin, messageProcessorPlugin).
+    BuildDaemon()
 ```
 
 **Characteristics**:
@@ -131,9 +132,9 @@ For **short-lived applications** that execute specific tasks:
 
 ```go
 // CLI tools, batch processors, one-time calculations
-result, err := fx.ExecuteCommand("process-data", inputData,
-    fx.WithPlugins(dataProcessorPlugin),
-)
+result, err := runtime.NewBuilder().
+    WithPlugins(dataProcessorPlugin).
+    BuildCommand("process-data", inputData)
 ```
 
 **Characteristics**:
@@ -211,9 +212,9 @@ func main() {
     webPlugin := &WebServerPlugin{Port: 8080}
     dbPlugin := &DatabasePlugin{URL: "postgres://..."}
     
-    err := fx.StartDaemon(
-        fx.WithPlugins(webPlugin, dbPlugin),
-    )
+    err := runtime.NewBuilder().
+        WithPlugins(webPlugin, dbPlugin).
+        BuildDaemon()
     if err != nil {
         log.Fatal(err)
     }
@@ -234,10 +235,12 @@ func main() {
     a, _ := strconv.ParseFloat(os.Args[2], 64)
     b, _ := strconv.ParseFloat(os.Args[3], 64)
     
-    result, err := fx.ExecuteCommand(operation, map[string]interface{}{
-        "a": a,
-        "b": b,
-    }, fx.WithPlugins(&CalculatorPlugin{}))
+    result, err := runtime.NewBuilder().
+        WithPlugins(&CalculatorPlugin{}).
+        BuildCommand(operation, map[string]interface{}{
+            "a": a,
+            "b": b,
+        })
     
     if err != nil {
         log.Fatal(err)
@@ -251,14 +254,17 @@ func main() {
 
 ```go
 func processFiles(inputDir, outputDir string) error {
-    return fx.ExecuteCommand("process-directory", map[string]interface{}{
-        "inputDir":  inputDir,
-        "outputDir": outputDir,
-    }, fx.WithPlugins(
-        &FileProcessorPlugin{},
-        &CompressionPlugin{},
-        &ValidationPlugin{},
-    ))
+    _, err := runtime.NewBuilder().
+        WithPlugins(
+            &FileProcessorPlugin{},
+            &CompressionPlugin{},
+            &ValidationPlugin{},
+        ).
+        BuildCommand("process-directory", map[string]interface{}{
+            "inputDir":  inputDir,
+            "outputDir": outputDir,
+        })
+    return err
 }
 ```
 
@@ -280,64 +286,6 @@ func TestCalculatorOperation(t *testing.T) {
     
     require.NoError(t, err)
     assert.Equal(t, 8.0, result.Data)
-}
-```
-
-## 🔧 API Reference
-
-### FX Package (`pkg/fx`)
-
-#### Functions
-
-```go
-// Start long-running daemon
-func StartDaemon(opts ...RuntimeOption) error
-
-// Execute command and exit
-func ExecuteCommand(operationID string, input map[string]interface{}, 
-    opts ...RuntimeOption) (map[string]interface{}, error)
-
-// Start daemon with custom signal handling
-func StartDaemonWithSignalHandling(signals []os.Signal, 
-    opts ...RuntimeOption) error
-```
-
-#### Options
-
-```go
-// Add plugins to runtime
-func WithPlugins(plugins ...plugin.Plugin) RuntimeOption
-
-// Add custom FX options for advanced users
-func WithFXOptions(options ...fx.Option) RuntimeOption
-```
-
-### Runtime Package (`pkg/runtime`)
-
-#### Options Pattern
-
-```go
-// Runtime creation with options
-func NewRuntimeWithOptions(opts ...RuntimeOption) (*Runtime, error)
-
-// Available options
-func WithPlugins(plugins ...plugin.Plugin) RuntimeOption
-func WithConfiguration(config Configuration) RuntimeOption
-func WithRegistry(registry Registry) RuntimeOption
-
-type RuntimeEnvironment interface {
-    component.System  // Embedded system interface
-    
-    Start(ctx context.Context) error
-    Stop(ctx context.Context) error
-    ExecuteOperation(ctx context.Context, operationID ComponentID, 
-        input Input) (Output, error)
-    
-    // Service accessors
-    PluginManager() (PluginManager, error)
-    EventBus() (EventBusService, error)
-    Logger() (Logger, error)
-    Configuration() Configuration
 }
 ```
 
@@ -368,7 +316,7 @@ type Output struct {
 
 ## 🚀 Migration Guide
 
-### From Manual Setup to FX Integration
+### From Manual Setup to Builder API
 
 #### Before (Manual)
 ```go
@@ -384,20 +332,20 @@ server.Start()
 // ... handle shutdown manually
 ```
 
-#### After (FX Integration)
+#### After (Builder API)
 ```go
 // Clean, declarative setup
-fx.StartDaemon(
-    fx.WithPlugins(
+runtime.NewBuilder().
+    WithPlugins(
         &ConfigPlugin{},
         &LoggerPlugin{},
         &DatabasePlugin{},
         &WebServerPlugin{},
-    ),
-)
+    ).
+    BuildDaemon()
 ```
 
-### From Builder Pattern to FX
+### From Options Pattern to Builder API
 
 #### Before (Options Pattern)
 ```go
@@ -410,25 +358,25 @@ runtime.Start(ctx)
 // Note: Manual signal handling needed for blocking
 ```
 
-#### After (FX)
+#### After (Builder API)
 ```go
-fx.StartDaemon(
-    fx.WithPlugins(&DatabasePlugin{}, &WebServerPlugin{}),
-)
+runtime.NewBuilder().
+    WithPlugins(&DatabasePlugin{}, &WebServerPlugin{}).
+    BuildDaemon()
 ```
 
 ## 📚 Next Steps
 
 - **New to the framework?** Check out the [examples](../examples/README.md) directory
-- **Want to use FX?** Read the [FX Integration Guide](fx/README.md)
-- **Building plugins?** See the [Plugin Development Guide](plugin/README.md)
-- **Need advanced patterns?** Review the [Domain Architecture Guide](../internal/domain/README.md)
+- **Want to build plugins?** See the [Plugin Development Guide](../docs/PLUGIN_DEVELOPMENT_GUIDE.md)
+- **Building components?** Review the [Service Operations Development Guide](../docs/SERVICE_OPERATIONS_DEVELOPMENT_GUIDE.md)
+- **Need advanced patterns?** Review the [Runtime Development Guide](../docs/RUNTIME_DEVELOPMENT_GUIDE.md)
 
 ## 🤝 Best Practices
 
 ### ✅ Do
 
-- **Use FX integration** for new applications
+- **Use Builder API** for new applications
 - **Keep plugins focused** - one responsibility per plugin
 - **Handle errors gracefully** - always check for initialization errors
 - **Use context correctly** - pass the framework's domain context
@@ -446,4 +394,4 @@ fx.StartDaemon(
 
 **Framework Version**: v1.0.0  
 **Documentation Updated**: 2024  
-**Need Help?** Check the examples or open an issue on GitHub 
+**Need Help?** Check the examples or open an issue on GitHub

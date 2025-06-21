@@ -137,16 +137,23 @@ verification.VerifySystemState(app)
 
 ## 🔄 **Skeleton Framework API Reference (v0.3.0)**
 
-### **Runtime Package (Unified API):**
+### **Runtime Package (Builder API):**
 ```go
 import "github.com/fintechain/skeleton/pkg/runtime"
 
 // Daemon mode - long-running services
-runtime.StartDaemon(runtime.WithPlugins(plugins...))
+runtime.NewBuilder().WithPlugins(plugins...).BuildDaemon()
 
 // Command mode - execute and exit
-result, err := runtime.ExecuteCommand("operation-id", input, 
-    runtime.WithPlugins(plugins...))
+result, err := runtime.NewBuilder().WithPlugins(plugins...).
+    BuildCommand("operation-id", input)
+
+// Custom dependencies
+runtime.NewBuilder().
+    WithPlugins(plugins...).
+    WithConfig(customConfig).
+    WithLogger(customLogger).
+    BuildDaemon()
 ```
 
 ### **Component System:**
@@ -178,10 +185,17 @@ func (p *MyPlugin) Initialize(ctx context.Context, system component.System) erro
 
 ## ⚠️ **Breaking Changes (v0.3.0)**
 
-- **pkg/fx package removed** - all functionality moved to pkg/runtime
-- **Import changes**: `"pkg/fx"` → `"pkg/runtime"`
-- **Function changes**: `fx.StartDaemon()` → `runtime.StartDaemon()`
-- **Function changes**: `fx.ExecuteCommand()` → `runtime.ExecuteCommand()`
+- **pkg/fx package completely removed** - replaced with Builder API
+- **FX dependency injection removed** - now uses simple Builder pattern
+- **All FX functions removed**: No more `StartDaemon()` or `ExecuteCommand()` legacy functions
+- **Only Builder API available**: Use `runtime.NewBuilder()` for all applications
+
+## 🚀 **Current Builder API (Only Option)**
+
+- **Builder Pattern**: `runtime.NewBuilder().WithPlugins().BuildDaemon()`
+- **Command Pattern**: `runtime.NewBuilder().WithPlugins().BuildCommand()`
+- **Custom Dependencies**: `runtime.NewBuilder().WithConfig().WithLogger().WithEventBus()`
+- **Simplified Architecture**: No complex dependency injection, direct constructor pattern
 
 ## 🎯 **Usage Instructions**
 

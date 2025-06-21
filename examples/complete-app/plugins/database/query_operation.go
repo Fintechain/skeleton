@@ -8,7 +8,9 @@ import (
 
 	"github.com/fintechain/skeleton/internal/domain/component"
 	"github.com/fintechain/skeleton/internal/domain/context"
+	domainRuntime "github.com/fintechain/skeleton/internal/domain/runtime"
 	infraComponent "github.com/fintechain/skeleton/internal/infrastructure/component"
+	"github.com/fintechain/skeleton/pkg/event"
 )
 
 // QueryOperation handles database query processing.
@@ -53,6 +55,39 @@ func (q *QueryOperation) Execute(ctx context.Context, input component.Input) (co
 
 	query, _ := data["query"].(string)
 
+	// Access configuration through the RuntimeEnvironment interface
+	var appName string
+	var appVersion string
+	var loggerTest string
+	var eventBusID string
+
+	// Try to cast to RuntimeEnvironment to access configuration
+	if runtimeEnv, ok := q.system.(domainRuntime.RuntimeEnvironment); ok {
+		config := runtimeEnv.Configuration()
+		appName = config.GetStringDefault("app.name", "Default App")
+		appVersion = config.GetStringDefault("app.version", "1.0.0")
+
+		// Test custom logger (we can't get ID from Logger interface, but we can verify it works)
+		logger := runtimeEnv.Logger()
+		logger.Info("🔍 Testing custom logger from database query operation")
+		loggerTest = "Custom Logger Working"
+
+		// Test custom event bus
+		eventBus := runtimeEnv.EventBus()
+		eventBusID = string(eventBus.ID())
+		// Publish a test event to verify event bus is working
+		testEvent := event.NewEvent("test.custom.dependencies", "database-query-operation", map[string]interface{}{
+			"source":  "database-query-operation",
+			"message": "Testing custom event bus",
+		})
+		eventBus.Publish(testEvent)
+	} else {
+		appName = "System Interface Failed"
+		appVersion = "System Interface Failed"
+		loggerTest = "System Interface Failed"
+		eventBusID = "System Interface Failed"
+	}
+
 	// Simulate query processing (focus on framework patterns, not real SQL)
 	result := map[string]interface{}{
 		"status":        "success",
@@ -60,6 +95,10 @@ func (q *QueryOperation) Execute(ctx context.Context, input component.Input) (co
 		"rows_affected": 1,
 		"operation_id":  string(q.ID()),
 		"message":       fmt.Sprintf("Query executed successfully: %s", query),
+		"app_name":      appName,    // This will show if custom config is used
+		"app_version":   appVersion, // This will show if custom config is used
+		"logger_test":   loggerTest, // This will show if custom logger is used
+		"event_bus_id":  eventBusID, // This will show if custom event bus is used
 	}
 
 	return component.Output{

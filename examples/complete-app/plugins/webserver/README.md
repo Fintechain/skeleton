@@ -64,9 +64,9 @@ Demonstrates plugin-as-orchestrator pattern.
 
 ```go
 func main() {
-    err := fx.StartDaemon(
-        fx.WithPlugins(webserver.NewWebServerPlugin(8080)),
-    )
+    err := runtime.NewBuilder().
+        WithPlugins(webserver.NewWebServerPlugin(8080)).
+        BuildDaemon()
     if err != nil {
         log.Fatal(err)
     }
@@ -84,10 +84,12 @@ func main() {
 
 ```go
 func main() {
-    result, err := fx.ExecuteCommand("http-route", map[string]interface{}{
-        "method": "GET",
-        "path":   "/api/health",
-    }, fx.WithPlugins(webserver.NewWebServerPlugin(8080)))
+    result, err := runtime.NewBuilder().
+        WithPlugins(webserver.NewWebServerPlugin(8080)).
+        BuildCommand("http-route", map[string]interface{}{
+            "method": "GET",
+            "path":   "/api/health",
+        })
     
     if err != nil {
         log.Fatal(err)
@@ -217,10 +219,12 @@ func TestHTTPService(t *testing.T) {
 ### Operation Testing
 ```go
 func TestRouteOperation(t *testing.T) {
-    result, err := fx.ExecuteCommand("http-route", map[string]interface{}{
-        "method": "GET",
-        "path":   "/api/health",
-    }, fx.WithPlugins(webserver.NewWebServerPlugin(8080)))
+    result, err := runtime.NewBuilder().
+        WithPlugins(webserver.NewWebServerPlugin(8080)).
+        BuildCommand("http-route", map[string]interface{}{
+            "method": "GET",
+            "path":   "/api/health",
+        })
     
     require.NoError(t, err)
     assert.Equal(t, "healthy", result["status"])

@@ -36,9 +36,9 @@ defer runtime.Stop(ctx)
 // Runtime handles everything automatically
 import "github.com/fintechain/skeleton/pkg/runtime"
 
-runtime.StartDaemon(
-    runtime.WithPlugins(webPlugin, dbPlugin),
-)
+runtime.NewBuilder().
+    WithPlugins(webPlugin, dbPlugin).
+    BuildDaemon()
 ```
 
 ### What Runtime Does For You
@@ -94,70 +94,43 @@ The runtime supports two fundamental application patterns:
 
 ## 📚 Runtime API Reference
 
-### Core Functions
+### Core Builder API
 
-#### StartDaemon
+#### NewBuilder
 ```go
-func StartDaemon(opts ...Option) error
+func NewBuilder() *RuntimeBuilder
+```
+Creates a new runtime builder for configuring and creating applications.
+
+#### RuntimeBuilder Methods
+```go
+func (b *RuntimeBuilder) WithPlugins(plugins ...plugin.Plugin) *RuntimeBuilder
+func (b *RuntimeBuilder) WithConfig(config config.Configuration) *RuntimeBuilder
+func (b *RuntimeBuilder) WithLogger(logger logging.LoggerService) *RuntimeBuilder
+func (b *RuntimeBuilder) WithEventBus(eventBus event.EventBusService) *RuntimeBuilder
+func (b *RuntimeBuilder) BuildDaemon() error
+func (b *RuntimeBuilder) BuildCommand(operationID string, input map[string]interface{}) (map[string]interface{}, error)
+```
+
+#### BuildDaemon
+```go
+func (b *RuntimeBuilder) BuildDaemon() error
 ```
 Starts a long-running daemon application that blocks until shutdown (SIGINT/SIGTERM).
 
-#### ExecuteCommand
+#### BuildCommand
 ```go
-func ExecuteCommand(operationID string, input map[string]interface{}, opts ...Option) (map[string]interface{}, error)
+func (b *RuntimeBuilder) BuildCommand(operationID string, input map[string]interface{}) (map[string]interface{}, error)
 ```
 Executes a specific operation and returns immediately.
 
 **Parameters:**
 - `operationID`: String ID of the registered operation component
 - `input`: Input data map (use `map[string]interface{}{}` for no input)
-- `opts`: Configuration options (plugins, FX options)
 
 **Returns:**
 - `map[string]interface{}`: Operation results
 - `error`: Execution error if any
-
-#### StartDaemonWithSignalHandling
-```go
-func StartDaemonWithSignalHandling(signals []os.Signal, opts ...Option) error
-```
-Starts a daemon with custom signal handling beyond the default SIGINT/SIGTERM.
-
-```go
-import (
-    "os"
-    "syscall"
-)
-
-err := runtime.StartDaemonWithSignalHandling(
-    []os.Signal{syscall.SIGTERM, syscall.SIGHUP}, 
-    runtime.WithPlugins(myPlugin),
-)
-```
-
-### Configuration Types
-
-#### Option and Config
-```go
-type Option func(*Config)
-
-type Config struct {
-    Plugins      []plugin.Plugin
-    ExtraOptions []fx.Option
-}
-```
-
-#### WithPlugins
-```go
-func WithPlugins(plugins ...plugin.Plugin) Option
-```
-Adds plugins to be loaded at startup.
-
-#### WithOptions
-```go
-func WithOptions(options ...fx.Option) Option
-```
-Adds custom FX dependency injection options.
 
 ### RuntimeEnvironment Type
 ```go
@@ -180,14 +153,14 @@ import (
 )
 
 func main() {
-    // Start a daemon application
-    err := runtime.StartDaemon(
-        runtime.WithPlugins(
+    // Start a daemon application using Builder API
+    err := runtime.NewBuilder().
+        WithPlugins(
             NewWebServerPlugin(),    // Provides HTTP server
             NewDatabasePlugin(),     // Provides database access
             NewAPIPlugin(),          // Provides API endpoints
-        ),
-    )
+        ).
+        BuildDaemon()
     if err != nil {
         log.Fatal("Failed to start application:", err)
     }
@@ -224,14 +197,13 @@ func main() {
     
     inputFile := os.Args[1]
     
-    // Execute a command and get result
-    result, err := runtime.ExecuteCommand("process-file", 
-        map[string]interface{}{
+    // Execute a command and get result using Builder API
+    result, err := runtime.NewBuilder().
+        WithPlugins(NewFileProcessorPlugin(), NewValidatorPlugin()).
+        BuildCommand("process-file", map[string]interface{}{
             "inputFile": inputFile,
             "format":    "json",
-        },
-        runtime.WithPlugins(NewFileProcessorPlugin(), NewValidatorPlugin()),
-    )
+        })
     if err != nil {
         log.Fatal("Processing failed:", err)
     }
@@ -257,7 +229,7 @@ The runtime provides sensible defaults so you can get started immediately:
 
 ```go
 // This works out of the box - no configuration needed!
-runtime.StartDaemon(runtime.WithPlugins(myPlugin))
+runtime.NewBuilder().WithPlugins(myPlugin).BuildDaemon()
 ```
 
 **What you get automatically:**
@@ -273,7 +245,6 @@ When you need custom configuration (database connections, API keys, etc.):
 
 ```go
 import (
-    "go.uber.org/fx"
     "github.com/fintechain/skeleton/pkg/runtime"
     "github.com/fintechain/skeleton/internal/domain/config"
     infraConfig "github.com/fintechain/skeleton/internal/infrastructure/config"
@@ -293,13 +264,10 @@ func createAppConfig() config.Configuration {
 }
 
 func main() {
-    err := runtime.StartDaemon(
-        runtime.WithPlugins(myWebPlugin, myDatabasePlugin),
-        runtime.WithOptions(
-            // Replace default config with your custom config
-            fx.Replace(fx.Annotate(createAppConfig, fx.As(new(config.Configuration)))),
-        ),
-    )
+    err := runtime.NewBuilder().
+        WithPlugins(myWebPlugin, myDatabasePlugin).
+        WithConfig(createAppConfig()).
+        BuildDaemon()
     if err != nil {
         log.Fatal(err)
     }
@@ -308,37 +276,35 @@ func main() {
 
 ### Advanced Customization
 
-For advanced scenarios, you can customize any part of the framework:
+For advanced scenarios, you can customize any part of the framework using the Builder API:
 
 ```go
+import (
+    "github.com/fintechain/skeleton/pkg/runtime"
+    "github.com/fintechain/skeleton/internal/domain/config"
+    "github.com/fintechain/skeleton/internal/domain/logging"
+    "github.com/fintechain/skeleton/internal/domain/event"
+    infraConfig "github.com/fintechain/skeleton/internal/infrastructure/config"
+    infraLogging "github.com/fintechain/skeleton/internal/infrastructure/logging"
+    infraEvent "github.com/fintechain/skeleton/internal/infrastructure/event"
+)
+
 func main() {
-    err := runtime.StartDaemon(
-        runtime.WithPlugins(myPlugin),
-        runtime.WithOptions(
-            // Add your own services to the dependency injection container
-            fx.Provide(func() *MyExternalAPI {
-                return &MyExternalAPI{
-                    APIKey: os.Getenv("EXTERNAL_API_KEY"),
-                    BaseURL: "https://api.example.com",
-                }
-            }),
-            
-            // Add lifecycle hooks for your services
-            fx.Invoke(func(lc fx.Lifecycle, api *MyExternalAPI) {
-                lc.Append(fx.Hook{
-                    OnStart: func(ctx context.Context) error {
-                        return api.Connect()
-                    },
-                    OnStop: func(ctx context.Context) error {
-                        return api.Disconnect()
-                    },
-                })
-            }),
-            
-            // Replace framework services with your implementations
-            fx.Replace(fx.Annotate(myCustomLogger, fx.As(new(logging.LoggerService)))),
-        ),
-    )
+    // Create custom dependencies
+    customConfig := infraConfig.NewMemoryConfigurationWithData(map[string]interface{}{
+        "app.name": "Custom App",
+        "app.port": 9090,
+    })
+    
+    customLogger := infraLogging.NewConsoleLogger()
+    customEventBus := infraEvent.NewInMemoryEventBus()
+    
+    err := runtime.NewBuilder().
+        WithPlugins(myPlugin).
+        WithConfig(customConfig).
+        WithLogger(customLogger).
+        WithEventBus(customEventBus).
+        BuildDaemon()
     if err != nil {
         log.Fatal(err)
     }
@@ -358,14 +324,14 @@ Plugins are **packages of functionality** that you load into your application. E
 ### Loading Plugins
 
 ```go
-runtime.StartDaemon(
-    runtime.WithPlugins(
+runtime.NewBuilder().
+    WithPlugins(
         webServerPlugin,     // Provides HTTP server service
         databasePlugin,      // Provides database connection service  
         calculatorPlugin,    // Provides math operations
         fileProcessorPlugin, // Provides file processing operations
-    ),
-)
+    ).
+    BuildDaemon()
 ```
 
 ### Plugin Communication
@@ -403,14 +369,14 @@ func (c *MyComponent) Initialize(ctx context.Context, system component.System) e
 
 ```go
 func main() {
-    err := runtime.StartDaemon(
-        runtime.WithPlugins(
+    err := runtime.NewBuilder().
+        WithPlugins(
             NewWebServerPlugin(8080),
             NewDatabasePlugin("postgres", "connection-string"),
             NewAuthPlugin(),
             NewAPIPlugin(), // Registers HTTP routes
-        ),
-    )
+        ).
+        BuildDaemon()
     if err != nil {
         log.Fatal(err)
     }
@@ -421,13 +387,13 @@ func main() {
 
 ```go
 func main() {
-    err := runtime.StartDaemon(
-        runtime.WithPlugins(
+    err := runtime.NewBuilder().
+        WithPlugins(
             NewMessageQueuePlugin("rabbitmq://localhost"),
             NewDatabasePlugin("postgres", "connection-string"),
             NewWorkerPlugin(), // Processes messages from queue
-        ),
-    )
+        ).
+        BuildDaemon()
     if err != nil {
         log.Fatal(err)
     }
@@ -441,18 +407,17 @@ func main() {
     inputFile := os.Args[1]
     outputFile := os.Args[2]
     
-    result, err := runtime.ExecuteCommand("transform-data",
-        map[string]interface{}{
-            "input":  inputFile,
-            "output": outputFile,
-            "format": "csv",
-        },
-        runtime.WithPlugins(
+    result, err := runtime.NewBuilder().
+        WithPlugins(
             NewFileIOPlugin(),
             NewDataTransformPlugin(),
             NewValidationPlugin(),
-        ),
-    )
+        ).
+        BuildCommand("transform-data", map[string]interface{}{
+            "input":  inputFile,
+            "output": outputFile,
+            "format": "csv",
+        })
     if err != nil {
         log.Fatal(err)
     }
@@ -465,15 +430,15 @@ func main() {
 
 ```go
 func main() {
-    err := runtime.StartDaemon(
-        runtime.WithPlugins(
+    err := runtime.NewBuilder().
+        WithPlugins(
             NewHTTPServerPlugin(8080),      // REST API
             NewGRPCServerPlugin(9090),      // gRPC API  
             NewMessageQueuePlugin("amqp://localhost"), // Async messaging
             NewDatabasePlugin("postgres", "connection-string"),
             NewBusinessLogicPlugin(),       // Your core functionality
-        ),
-    )
+        ).
+        BuildDaemon()
     if err != nil {
         log.Fatal(err)
     }
@@ -540,9 +505,9 @@ func main() {
 **Plugin Not Found**:
 ```go
 // Make sure plugin is loaded
-runtime.StartDaemon(
-    runtime.WithPlugins(myPlugin), // ← Plugin must be in this list
-)
+runtime.NewBuilder().
+    WithPlugins(myPlugin). // ← Plugin must be in this list
+    BuildDaemon()
 ```
 
 **Operation Not Found**:
@@ -572,6 +537,11 @@ func (s *MyService) Initialize(ctx context.Context, system component.System) err
 ### Enabling Debug Logging
 
 ```go
+import (
+    "github.com/fintechain/skeleton/internal/domain/config"
+    infraConfig "github.com/fintechain/skeleton/internal/infrastructure/config"
+)
+
 func createDebugConfig() config.Configuration {
     settings := map[string]interface{}{
         "log.level": "debug", // Enable debug logging
@@ -579,12 +549,10 @@ func createDebugConfig() config.Configuration {
     return infraConfig.NewMemoryConfigurationWithData(settings)
 }
 
-runtime.StartDaemon(
-    runtime.WithPlugins(myPlugin),
-    runtime.WithOptions(
-        fx.Replace(fx.Annotate(createDebugConfig, fx.As(new(config.Configuration)))),
-    ),
-)
+runtime.NewBuilder().
+    WithPlugins(myPlugin).
+    WithConfig(createDebugConfig()).
+    BuildDaemon()
 ```
 
 ## 🎯 Best Practices
@@ -597,6 +565,8 @@ runtime.StartDaemon(
 4. **Use configuration**: Don't hardcode values, use the config service
 5. **Let runtime manage lifecycle**: Don't manually start/stop services
 6. **Keep main() simple**: Put complex logic in plugins, not main()
+7. **Use Builder API**: Prefer `runtime.NewBuilder()` for new applications
+8. **Custom dependencies**: Use `WithConfig()`, `WithLogger()`, `WithEventBus()` for customization
 
 ### ❌ Don't
 
@@ -606,6 +576,7 @@ runtime.StartDaemon(
 4. **Hardcode dependencies**: Use the registry to find other components
 5. **Block in main()**: Runtime handles blocking and signal handling
 6. **Ignore shutdown signals**: Runtime handles CTRL+C automatically
+7. **Use legacy API for new projects**: Prefer Builder API over legacy functions
 
 ## 🚀 Next Steps
 

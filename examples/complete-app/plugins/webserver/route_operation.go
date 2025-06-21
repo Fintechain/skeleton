@@ -52,6 +52,22 @@ func (r *RouteOperation) Execute(ctx context.Context, input component.Input) (co
 	method, _ := data["method"].(string)
 	path, _ := data["path"].(string)
 
+	// Access configuration to verify which configuration is being used
+	var appName string
+	var appVersion string
+	if env, ok := r.system.(interface {
+		Configuration() interface {
+			GetStringDefault(string, string) string
+		}
+	}); ok {
+		config := env.Configuration()
+		appName = config.GetStringDefault("app.name", "Default App")
+		appVersion = config.GetStringDefault("app.version", "1.0.0")
+	} else {
+		appName = "Unknown App"
+		appVersion = "Unknown Version"
+	}
+
 	// Simulate route processing (focus on framework patterns, not real HTTP)
 	response := map[string]interface{}{
 		"status":       "success",
@@ -59,6 +75,8 @@ func (r *RouteOperation) Execute(ctx context.Context, input component.Input) (co
 		"path":         path,
 		"message":      fmt.Sprintf("Route %s %s processed successfully", method, path),
 		"operation_id": string(r.ID()),
+		"app_name":     appName,    // This will show which config is used
+		"app_version":  appVersion, // This will show which config is used
 	}
 
 	return component.Output{

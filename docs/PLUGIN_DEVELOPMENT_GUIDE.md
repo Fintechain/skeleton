@@ -348,9 +348,9 @@ func (p *MyPlugin) Stop(ctx context.Context) error {
 
 ```go
 func main() {
-    err := fx.StartDaemon(
-        fx.WithPlugins(NewMyPlugin()),
-    )
+    err := runtime.NewBuilder().
+        WithPlugins(NewMyPlugin()).
+        BuildDaemon()
     if err != nil {
         log.Fatal(err)
     }
@@ -362,10 +362,12 @@ func main() {
 
 ```go
 func main() {
-    result, err := fx.ExecuteCommand("my-operation", map[string]interface{}{
-        "name":  "test",
-        "value": 42.0,
-    }, fx.WithPlugins(NewMyPlugin()))
+    result, err := runtime.NewBuilder().
+        WithPlugins(NewMyPlugin()).
+        BuildCommand("my-operation", map[string]interface{}{
+            "name":  "test",
+            "value": 42.0,
+        })
     
     if err != nil {
         log.Fatal(err)
@@ -381,44 +383,40 @@ func main() {
 
 ```go
 func TestMyOperation(t *testing.T) {
-    // Use traditional runtime for precise test control
-    runtime, err := runtime.NewRuntimeWithOptions(
-        runtime.WithPlugins(NewMyPlugin()),
-    )
-    require.NoError(t, err)
-    
-    ctx := context.NewContext()
-    err = runtime.Start(ctx)
-    require.NoError(t, err)
-    defer runtime.Stop(ctx)
-    
-    // Test operation execution
-    result, err := runtime.ExecuteOperation(ctx, "my-operation", component.Input{
-        Data: map[string]interface{}{
+    // Use Builder API for test setup
+    result, err := runtime.NewBuilder().
+        WithPlugins(NewMyPlugin()).
+        BuildCommand("my-operation", map[string]interface{}{
             "name":  "test",
             "value": 10.0,
-        },
-    })
+        })
     
     require.NoError(t, err)
     
-    data := result.Data.(map[string]interface{})
-    assert.Equal(t, "test", data["processed_name"])
-    assert.Equal(t, 20.0, data["processed_value"])
+    assert.Equal(t, "test", result["processed_name"])
+    assert.Equal(t, 20.0, result["processed_value"])
 }
 ```
 
-### Testing with FX (Simple Integration)
+### Testing with Custom Dependencies
 
 ```go
-func TestMyOperationWithFX(t *testing.T) {
-    result, err := fx.ExecuteCommand("my-operation", map[string]interface{}{
-        "name":  "test",
-        "value": 10.0,
-    }, fx.WithPlugins(NewMyPlugin()))
+func TestMyOperationWithCustomConfig(t *testing.T) {
+    // Create custom configuration
+    config := infraConfig.NewMemoryConfigurationWithData(map[string]interface{}{
+        "my_component.multiplier": 3,
+    })
+    
+    result, err := runtime.NewBuilder().
+        WithPlugins(NewMyPlugin()).
+        WithConfig(config).
+        BuildCommand("my-operation", map[string]interface{}{
+            "name":  "test",
+            "value": 10.0,
+        })
     
     require.NoError(t, err)
-    assert.Equal(t, 20.0, result["processed_value"])
+    assert.Equal(t, 30.0, result["processed_value"]) // 10 * 3
 }
 ```
 

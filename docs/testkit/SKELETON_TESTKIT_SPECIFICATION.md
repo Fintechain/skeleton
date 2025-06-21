@@ -27,8 +27,8 @@ The **skeleton-testkit** is a simple integration testing toolkit for Skeleton Fr
 ┌─────────────────────────────────────────────────────────┐
 │              Your Skeleton Application                  │
 │       (Real skeleton app with real plugins)            │
-│              runtime.StartDaemon(...)                   │
-│              runtime.ExecuteCommand(...)                │
+│        runtime.NewBuilder().BuildDaemon()               │
+│        runtime.NewBuilder().BuildCommand()              │
 └───────────────────────────┬─────────────────────────────┘
                             │ tested with
 ┌───────────────────────────▼─────────────────────────────┐
@@ -216,13 +216,9 @@ func TestUserServiceWithDatabase(t *testing.T) {
             database.NewPlugin(),
             user.NewPlugin(),
         },
-        runtime.WithOptions(
-            fx.Replace(fx.Annotate(func() config.Configuration {
-                return testing.NewTestConfig(map[string]interface{}{
-                    "database.url": postgres.ConnectionString(),
-                })
-            }, fx.As(new(config.Configuration)))),
-        ),
+        runtime.WithConfig(testing.NewTestConfig(map[string]interface{}{
+            "database.url": postgres.ConnectionString(),
+        })),
     )
     
     assert.Equal(t, "created", result["status"])
@@ -352,10 +348,9 @@ func main() {
         }
         
         operation := os.Args[2]
-        result, err := runtime.ExecuteCommand(operation, 
-            getInputFromArgsOrEnv(), // Your input parsing logic
-            runtime.WithPlugins(plugins.AllPlugins()...),
-        )
+        result, err := runtime.NewBuilder().
+            WithPlugins(plugins.AllPlugins()...).
+            BuildCommand(operation, getInputFromArgsOrEnv()) // Your input parsing logic
         if err != nil {
             panic(err)
         }
@@ -365,9 +360,13 @@ func main() {
         
     } else {
         // Daemon mode (default)
-        err := runtime.StartDaemon(
-            runtime.WithPlugins(plugins.AllPlugins()...),
-        )
+        err := runtime.NewBuilder().
+            WithPlugins(plugins.AllPlugins()...).
+            BuildDaemon()
+        if err != nil {
+            panic(err)
+        }
+    }
         if err != nil {
             panic(err)
         }
@@ -440,11 +439,7 @@ func TestWithConfiguration(t *testing.T) {
     
     result := testing.TestSkeletonOperation(t, "my-operation", input,
         plugins,
-        runtime.WithOptions(
-            fx.Replace(fx.Annotate(func() config.Configuration {
-                return testConfig
-            }, fx.As(new(config.Configuration)))),
-        ),
+        runtime.WithConfig(testConfig),
     )
 }
 ```

@@ -12,7 +12,7 @@ Based on comprehensive analysis of the Skeleton Framework, the skeleton-testkit 
 ```
 Your Skeleton App Testing Strategy:
 ├── Unit Tests (No Containers)
-│   └── Use skeleton's built-in runtime.ExecuteCommand() 
+│   └── Use skeleton's built-in runtime.NewBuilder().BuildCommand() 
 ├── Integration Tests (Real Dependencies)
 │   └── Use testcontainers + skeleton's configuration system
 └── End-to-End Tests (Full Stack)
@@ -22,9 +22,9 @@ Your Skeleton App Testing Strategy:
 ### Skeleton-Testkit Role
 ```
 Skeleton Framework (Excellent testing built-in)
-├── runtime.ExecuteCommand() ✅ (Perfect for unit tests)
-├── runtime.StartDaemon() ✅ (Perfect for integration)  
-├── FX dependency injection ✅ (Perfect for mocking)
+├── runtime.NewBuilder().BuildCommand() ✅ (Perfect for unit tests)
+├── runtime.NewBuilder().BuildDaemon() ✅ (Perfect for integration)  
+├── Builder API dependency injection ✅ (Perfect for custom dependencies)
 └── Configuration system ✅ (Perfect for test configs)
 
 Skeleton-Testkit (Simple helpers)
@@ -123,9 +123,19 @@ func (p *PostgresHelper) ConnectionString() string {
 func TestSkeletonOperation(t *testing.T, operationID string, input map[string]interface{}, 
     plugins []plugin.Plugin, options ...runtime.Option) map[string]interface{} {
     
-    result, err := runtime.ExecuteCommand(operationID, input,
-        append([]runtime.Option{runtime.WithPlugins(plugins...)}, options...)...,
-    )
+    builder := runtime.NewBuilder().WithPlugins(plugins...)
+    
+    // Apply additional configuration if provided
+    if len(options) > 0 {
+        // Build custom configuration from options
+        for _, opt := range options {
+            // Apply configuration options to builder
+            // (This would need implementation based on actual option types)
+        }
+    }
+    
+    // Use Builder API
+    result, err := builder.BuildCommand(operationID, input)
     require.NoError(t, err)
     return result
 }
@@ -135,13 +145,9 @@ func NewTestConfig(data map[string]interface{}) config.Configuration {
 }
 
 func WithDatabaseConfig(url string) runtime.Option {
-    return runtime.WithOptions(
-        fx.Replace(fx.Annotate(func() config.Configuration {
-            return NewTestConfig(map[string]interface{}{
-                "database.url": url,
-            })
-        }, fx.As(new(config.Configuration)))),
-    )
+    return runtime.WithConfig(NewTestConfig(map[string]interface{}{
+        "database.url": url,
+    }))
 }
 ```
 
@@ -462,7 +468,6 @@ require (
     github.com/fintechain/skeleton v0.2.0
     github.com/testcontainers/testcontainers-go v0.26.0
     github.com/stretchr/testify v1.8.4
-    go.uber.org/fx v1.20.0
 )
 ```
 
@@ -524,7 +529,9 @@ result := testing.TestSkeletonOperation(t, "my-op", input,
 ```go
 // Start simple with skeleton's built-in testing
 func TestMyOperation(t *testing.T) {
-    result, err := runtime.ExecuteCommand("add", 
+    result, err := runtime.NewBuilder().
+        WithPlugins(calculator.NewPlugin()).
+        BuildCommand("add", 
         map[string]interface{}{"a": 1, "b": 2},
         runtime.WithPlugins(calculator.NewPlugin()),
     )
